@@ -76,7 +76,7 @@ object SensitivityReducer {
         val groundDistance = config.groundDistance.get()
         val newOnGround = if (config.onGround.get()) {
             if (groundDistance > 0f) PlayerUtils.onGroundOrCloseToGround(groundDistance)
-            else PlayerUtils.onGround()
+            else PlayerUtils.onGround() && !PlayerUtils.isFlying()
         } else {
             false
         }

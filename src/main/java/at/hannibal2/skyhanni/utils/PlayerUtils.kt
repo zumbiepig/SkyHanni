@@ -46,8 +46,13 @@ object PlayerUtils {
 
     fun onGround(): Boolean = MinecraftCompat.localPlayer.onGround()
     fun inAir(): Boolean = !onGround()
+    fun isFlying(): Boolean {
+        val player = MinecraftCompat.localPlayer
+        return player.abilities.flying || player.isFallFlying
+    }
 
     fun onGroundOrCloseToGround(maxDistance: Float): Boolean {
+        if (isFlying()) return false
         if (onGround()) return true
         if (maxDistance <= 0f) return false
 
