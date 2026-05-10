@@ -58,7 +58,7 @@ class SensitivityReducerConfig {
     @Expose
     @ConfigOption(
         name = "Ground Distance",
-        desc = "Allow reduced sensitivity while within this distance above the ground.",
+        desc = "Allow reduced sensitivity while within this distance above the ground (in blocks).",
     )
     @ConfigEditorSlider(minValue = 0f, maxValue = 2f, minStep = 0.1f)
     val groundDistance: Property<Float> = Property.of(0f)
