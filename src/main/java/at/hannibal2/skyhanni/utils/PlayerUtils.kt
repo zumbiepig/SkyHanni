@@ -51,12 +51,14 @@ object PlayerUtils {
         if (onGround()) return true
         if (maxDistance <= 0f) return false
 
-        val start = MinecraftCompat.localPlayer.getLorenzVec()
+        val player = MinecraftCompat.localPlayer
+        val start = player.getLorenzVec().copy(y = player.boundingBox.minY)
         val maxDistanceDouble = maxDistance.toDouble()
         val hitResult = BlockUtils.raycast(start, start.down(maxDistanceDouble)) ?: return false
         if (hitResult.miss) return false
 
         val distanceToGround = start.y - hitResult.location.y
+        if (distanceToGround < 0) return false
         return distanceToGround <= maxDistanceDouble
     }
 
