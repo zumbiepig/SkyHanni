@@ -55,10 +55,7 @@ object PlayerUtils {
         val start = player.getLorenzVec().copy(y = player.boundingBox.minY)
         val maxDistanceDouble = maxDistance.toDouble()
         val hitResult = BlockUtils.raycast(start, start.down(maxDistanceDouble)) ?: return false
-        if (hitResult.miss) return false
-
-        val distanceToGround = start.y - hitResult.location.y
-        return distanceToGround <= maxDistanceDouble
+        return !hitResult.miss
     }
 
     fun blockPosition() = MinecraftCompat.localPlayer.blockPosition().toLorenzVec()
