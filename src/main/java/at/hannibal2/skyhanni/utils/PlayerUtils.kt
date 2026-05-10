@@ -58,7 +58,6 @@ object PlayerUtils {
         if (hitResult.miss) return false
 
         val distanceToGround = start.y - hitResult.location.y
-        if (distanceToGround < 0) return false
         return distanceToGround <= maxDistanceDouble
     }
 
