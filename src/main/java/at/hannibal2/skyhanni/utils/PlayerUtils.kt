@@ -59,10 +59,7 @@ object PlayerUtils {
         val maxDistanceDouble = maxDistance.toDouble()
         val effectiveMaxDistance = maxDistanceDouble + GROUND_DISTANCE_TOLERANCE
         val hitResult = BlockUtils.raycast(start, start.down(effectiveMaxDistance)) ?: return false
-        if (hitResult.miss) return false
-
-        val distanceToGround = start.y - hitResult.location.y
-        return distanceToGround <= effectiveMaxDistance
+        return !hitResult.miss
     }
 
     fun blockPosition() = MinecraftCompat.localPlayer.blockPosition().toLorenzVec()
