@@ -50,7 +50,7 @@ class SensitivityReducerConfig {
     @Expose
     @ConfigOption(
         name = "Only Near Ground",
-        desc = "Lower sensitivity when standing on the ground or within the configured Ground Distance above the ground.",
+        desc = "Lower sensitivity when standing on the ground. When enabled with Ground Distance > 0, also applies within that distance above the ground.",
     )
     @ConfigEditorBoolean
     val onGround: Property<Boolean> = Property.of(false)
