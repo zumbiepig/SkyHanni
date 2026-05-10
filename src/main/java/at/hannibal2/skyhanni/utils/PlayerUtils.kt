@@ -11,7 +11,7 @@ import java.util.UUID
 
 object PlayerUtils {
 
-    // Small offset to account for floating point drift in distance comparisons.
+    // Small offset to extend the raycast distance for floating point drift.
     private const val GROUND_DISTANCE_TOLERANCE = 0.001
 
     val STANDING_EYE_HEIGHT = Avatar.POSES.getValue(Pose.STANDING).eyeHeight
@@ -57,11 +57,12 @@ object PlayerUtils {
 
         val start = MinecraftCompat.localPlayer.getLorenzVec()
         val maxDistanceDouble = maxDistance.toDouble()
-        val hitResult = BlockUtils.raycast(start, start.down(maxDistanceDouble)) ?: return false
+        val maxDistanceWithTolerance = maxDistanceDouble + GROUND_DISTANCE_TOLERANCE
+        val hitResult = BlockUtils.raycast(start, start.down(maxDistanceWithTolerance)) ?: return false
         if (hitResult.miss) return false
 
         val distanceToGround = start.y - hitResult.location.y
-        return distanceToGround <= maxDistanceDouble + GROUND_DISTANCE_TOLERANCE
+        return distanceToGround <= maxDistanceDouble
     }
 
     fun blockPosition() = MinecraftCompat.localPlayer.blockPosition().toLorenzVec()
