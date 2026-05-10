@@ -48,9 +48,20 @@ class SensitivityReducerConfig {
     var showGui: Boolean = true
 
     @Expose
-    @ConfigOption(name = "Only in Ground", desc = "Lower sensitivity when standing on the ground.")
+    @ConfigOption(
+        name = "Only in Ground",
+        desc = "Lower sensitivity when standing on the ground (or within Ground Distance).",
+    )
     @ConfigEditorBoolean
     val onGround: Property<Boolean> = Property.of(false)
+
+    @Expose
+    @ConfigOption(
+        name = "Ground Distance",
+        desc = "Allow reduced sensitivity while within this distance above the ground.",
+    )
+    @ConfigEditorSlider(minValue = 0f, maxValue = 2f, minStep = 0.1f)
+    val groundDistance: Property<Float> = Property.of(0f)
 
     @Expose
     @ConfigOption(name = "Disable in Barn", desc = "Disable reduced sensitivity in barn plot.")

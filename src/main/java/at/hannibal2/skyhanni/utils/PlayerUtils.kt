@@ -48,6 +48,20 @@ object PlayerUtils {
     fun onGround(): Boolean = MinecraftCompat.localPlayer.onGround()
     fun inAir(): Boolean = !onGround()
 
+    fun onGroundOrCloseToGround(maxDistance: Float): Boolean {
+        if (onGround()) return true
+        if (maxDistance <= 0f) return false
+
+        val start = MinecraftCompat.localPlayer.getLorenzVec()
+        val tolerance = 0.001
+        val maxDistanceDouble = maxDistance.toDouble()
+        val hitResult = BlockUtils.raycast(start, start.down(maxDistanceDouble + tolerance)) ?: return false
+        if (hitResult.miss) return false
+
+        val distanceToGround = start.y - hitResult.location.y
+        return distanceToGround <= maxDistanceDouble + tolerance
+    }
+
     fun blockPosition() = MinecraftCompat.localPlayer.blockPosition().toLorenzVec()
 
     fun getLocation() = MinecraftCompat.localPlayer.getLorenzVec()
