@@ -10,10 +10,6 @@ import net.minecraft.world.entity.ai.attributes.Attributes
 import java.util.UUID
 
 object PlayerUtils {
-
-    // Small offset to account for floating point drift in distance comparisons.
-    private const val GROUND_DISTANCE_TOLERANCE = 0.001
-
     val STANDING_EYE_HEIGHT = Avatar.POSES.getValue(Pose.STANDING).eyeHeight
     val SNEAKING_EYE_HEIGHT = Avatar.POSES.getValue(Pose.CROUCHING).eyeHeight
 
@@ -61,7 +57,7 @@ object PlayerUtils {
         if (hitResult.miss) return false
 
         val distanceToGround = start.y - hitResult.location.y
-        return distanceToGround <= maxDistanceDouble + GROUND_DISTANCE_TOLERANCE
+        return distanceToGround <= maxDistanceDouble
     }
 
     fun blockPosition() = MinecraftCompat.localPlayer.blockPosition().toLorenzVec()
