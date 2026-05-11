@@ -48,10 +48,7 @@ class SensitivityReducerConfig {
     var showGui: Boolean = true
 
     @Expose
-    @ConfigOption(
-        name = "Only on Ground",
-        desc = "When enabled, lower sensitivity only while on or near the ground.",
-    )
+    @ConfigOption(name = "Only on Ground", desc = "When enabled, lower sensitivity only while on or near the ground.")
     @ConfigEditorBoolean
     val onGround: Property<Boolean> = Property.of(false)
 
