@@ -10,6 +10,7 @@ import net.minecraft.world.entity.ai.attributes.Attributes
 import java.util.UUID
 
 object PlayerUtils {
+
     val STANDING_EYE_HEIGHT = Avatar.POSES.getValue(Pose.STANDING).eyeHeight
     val SNEAKING_EYE_HEIGHT = Avatar.POSES.getValue(Pose.CROUCHING).eyeHeight
 

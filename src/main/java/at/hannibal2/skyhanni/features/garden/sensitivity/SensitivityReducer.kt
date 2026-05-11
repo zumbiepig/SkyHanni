@@ -74,8 +74,7 @@ object SensitivityReducer {
     private fun updatePlayerStatus() {
         val newInBarn = GardenApi.onUnfarmablePlot
         val onGroundTolerance = config.onGroundTolerance.get()
-        val newOnGround =
-            PlayerUtils.onGround() ||
+        val newOnGround = PlayerUtils.onGround() ||
             (!PlayerUtils.isFlying() && onGroundTolerance > 0.0 &&
                 PlayerUtils.getLocation().let { !LocationUtils.canSee(it, it.down(onGroundTolerance)) })
 
