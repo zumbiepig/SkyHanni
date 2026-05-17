@@ -11,19 +11,10 @@ object MouseSensitivityManager {
 
     private val config get() = SkyHanniMod.feature.garden.sensitivityReducer
 
+    private var state: SensitivityState = SensitivityState.UNCHANGED
+
     private var lastIn = Float.NaN
     private var lastOut = Float.NaN
-
-    var state: SensitivityState = SensitivityState.UNCHANGED
-        set(value) {
-            field = value
-            destroyCache()
-        }
-
-    private fun reduceTransform(f: Float): Float {
-        val reducingFactor = config.reducingFactor.get().coerceIn(REDUCING_FACTOR_HARD_BOUNDS)
-        return ((f + 1f / 3f) / reducingFactor) - 1f / 3f
-    }
 
     fun getSensitivity(original: Float): Float {
         if (original != lastIn) {
@@ -32,11 +23,6 @@ object MouseSensitivityManager {
         }
 
         return lastOut
-    }
-
-    fun destroyCache() {
-        lastIn = Float.NaN
-        lastOut = Float.NaN
     }
 
     @HandleEvent
@@ -53,16 +39,19 @@ object MouseSensitivityManager {
         }
     }
 
-    enum class SensitivityState(
-        private val transform: ((Float) -> Float),
-    ) {
+    enum class SensitivityState(private val transform: ((Float) -> Float)) {
         UNCHANGED({ it }),
-        LOCKED({ _ -> -1f / 3f }),
-        AUTO_REDUCED(::reduceTransform),
-        MANUAL_REDUCED(::reduceTransform),
+        REDUCED({ ((it + 1f / 3f) / config.reducingFactor.get().coerceIn(REDUCING_FACTOR_HARD_BOUNDS)) - 1f / 3f }),
+        LOCKED({ -1f / 3f }),
         ;
 
-        fun apply(original: Float): Float = transform(original)
-        fun isActive(): Boolean = this == state
+        fun apply(original: Float) = transform(original)
+        fun isActive() = state == this
+        fun setActive() {
+            if (state == this) return
+            state = this
+            lastIn = Float.NaN
+            lastOut = Float.NaN
+        }
     }
 }

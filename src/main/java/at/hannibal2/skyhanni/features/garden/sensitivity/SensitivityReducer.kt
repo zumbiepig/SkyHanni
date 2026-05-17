@@ -6,8 +6,10 @@ import at.hannibal2.skyhanni.config.ConfigUpdaterMigrator
 import at.hannibal2.skyhanni.config.commands.CommandCategory
 import at.hannibal2.skyhanni.config.commands.CommandRegistrationEvent
 import at.hannibal2.skyhanni.config.features.garden.SensitivityReducerConfig
+import at.hannibal2.skyhanni.events.chat.SkyHanniChatEvent
 import at.hannibal2.skyhanni.features.fishing.FishingApi
 import at.hannibal2.skyhanni.features.garden.GardenApi
+import at.hannibal2.skyhanni.features.garden.pests.PestApi
 import at.hannibal2.skyhanni.features.garden.sensitivity.MouseSensitivityManager.SensitivityState
 import at.hannibal2.skyhanni.skyhannimodule.SkyHanniModule
 import at.hannibal2.skyhanni.utils.BlockUtils
@@ -17,9 +19,11 @@ import at.hannibal2.skyhanni.utils.ItemUtils.getInternalName
 import at.hannibal2.skyhanni.utils.KeyboardManager.isKeyHeld
 import at.hannibal2.skyhanni.utils.NeuInternalName.Companion.toInternalName
 import at.hannibal2.skyhanni.utils.PlayerUtils
+import at.hannibal2.skyhanni.utils.RegexUtils.matches
 import at.hannibal2.skyhanni.utils.RenderUtils.renderRenderable
 import at.hannibal2.skyhanni.utils.renderables.Renderable
 import at.hannibal2.skyhanni.utils.renderables.primitives.text
+import at.hannibal2.skyhanni.utils.repopatterns.RepoPattern
 import com.google.gson.JsonArray
 import com.google.gson.JsonPrimitive
 import net.minecraft.client.Minecraft
@@ -28,30 +32,87 @@ import net.minecraft.client.Minecraft
 object SensitivityReducer {
 
     private val config get() = SkyHanniMod.feature.garden.sensitivityReducer
+    private val commandMessageId = ChatUtils.getUniqueMessageId()
 
     private val SQUEAKY_MOUSEMAT = "SQUEAKY_MOUSEMAT".toInternalName()
 
-    val REDUCING_FACTOR_HARD_BOUNDS = 1f..10_000f
+    val REDUCING_FACTOR_HARD_BOUNDS = 1f..50f
+    private val ON_GROUND_TOLERANCE_HARD_BOUNDS = 0f..2f
 
-    private var inBarn: Boolean = false
-    private var onGround: Boolean = false
+    private var manualState: SensitivityState? = null
+        set(value) {
+            field = value
+            onTick()
+        }
 
-    private var shouldBeActive = false
+    /**
+     * REGEX-TEST: Teleported you to The Barn!
+     * REGEX-TEST: Teleported you to Plot - 1!
+     * REGEX-TEST: Teleported you to Plot - 20!
+     */
+    private val gardenTeleportPattern by RepoPattern.pattern(
+        "chat.garden.teleport.colorless",
+        "Teleported you to .*!",
+    )
 
-    private val isActive get() = isAutoActive || isManualActive
-    private val isAutoActive get() = SensitivityState.AUTO_REDUCED.isActive()
-    private val isManualActive get() = SensitivityState.MANUAL_REDUCED.isActive()
+    /**
+     * REGEX-TEST: §7Warping...
+     */
+    private val warpingPattern by RepoPattern.pattern(
+        "data.entity.warping",
+        "§7(?:Warping|Warping you to your SkyBlock island|Warping using transfer token|Finding player|Sending a visit request)\\.\\.\\.",
+    )
+
+    @HandleEvent
+    fun onChat(event: SkyHanniChatEvent.Allow) {
+        if (config.disableOnTeleport.get() && (event.chatComponent.let { gardenTeleportPattern.matches(it) || warpingPattern.matches(it) })) manualState =
+            null
+    }
+
+
+    @HandleEvent
+    fun onWorldChange() {
+        manualState = null
+    }
 
     @HandleEvent
     fun onTick() {
-        if (!GardenApi.inGarden()) {
-            if (isAutoActive) autoToggle()
+        manualState?.let {
+            it.setActive()
             return
         }
-        if (SensitivityState.LOCKED.isActive()) return
 
-        updatePlayerStatus()
-        autoToggleIfNeeded()
+        if (!shouldAutoReduce()) SensitivityState.UNCHANGED.setActive()
+        else if (!config.lockMouse.get()) SensitivityState.REDUCED.setActive()
+        else SensitivityState.LOCKED.setActive()
+    }
+
+    private fun shouldAutoReduce(): Boolean {
+        if (!GardenApi.inGarden() || !config.enabled.get()) return false
+
+        val shouldReduce = (config.mode.any {
+            when (it) {
+                SensitivityReducerConfig.Mode.TOOL -> GardenApi.toolInHand != null
+                SensitivityReducerConfig.Mode.FISHING_ROD -> FishingApi.holdingRod
+                SensitivityReducerConfig.Mode.KEYBIND -> config.keybind.isKeyHeld() && Minecraft.getInstance().screen == null
+                SensitivityReducerConfig.Mode.MOUSEMAT -> GardenApi.itemInHand?.getInternalName() == SQUEAKY_MOUSEMAT
+                SensitivityReducerConfig.Mode.VACUUM -> PestApi.hasVacuumInHand()
+                SensitivityReducerConfig.Mode.SPRAYONATOR -> PestApi.hasSprayonatorInHand()
+            }
+        })
+        if (!shouldReduce) return false
+
+        if (config.onlyPlot.get() && GardenApi.onUnfarmablePlot) return false
+
+        if (config.onGround.get()) {
+            // return false if the player is not on/near the ground
+            val tolerance = config.onGroundTolerance.get().coerceIn(ON_GROUND_TOLERANCE_HARD_BOUNDS)
+            if (!PlayerUtils.onGround() && (tolerance == 0f || PlayerUtils.isFlying() || PlayerUtils.getLocation().let {
+                    BlockUtils.raycast(it, it.down(tolerance))?.miss != false
+                })) return false
+        }
+
+        return true
     }
 
     @HandleEvent
@@ -60,113 +121,15 @@ object SensitivityReducer {
             val coerced = coerceIn(REDUCING_FACTOR_HARD_BOUNDS)
             if (this != coerced) {
                 config.reducingFactor.set(coerced)
-                ChatUtils.debug(
-                    "SensitivityReducer: Fixed invalid reduction factor ($this -> $coerced)",
-                )
-            }
-            MouseSensitivityManager.destroyCache()
-        }
-        config.enabled.afterChange { autoToggle() }
-        config.onlyPlot.afterChange { autoToggle() }
-        config.onGround.afterChange { autoToggle() }
-        config.onGroundTolerance.afterChange { autoToggle() }
-    }
-
-    private fun updatePlayerStatus() {
-        val newInBarn = GardenApi.onUnfarmablePlot
-
-        val onGroundTolerance = if (config.onGround.get()) config.onGroundTolerance.get() else 0f
-        val newOnGround = when {
-            PlayerUtils.onGround() -> true
-            PlayerUtils.isFlying() -> false
-            onGroundTolerance > 0f -> PlayerUtils.getLocation().let {
-                BlockUtils.raycast(it, it.down(onGroundTolerance))?.miss == false
-            }
-
-            else -> false
-        }
-
-        if (inBarn != newInBarn) {
-            inBarn = newInBarn
-            tryAutoToggle()
-        }
-
-        if (onGround != newOnGround) {
-            onGround = newOnGround
-            tryAutoToggle()
-        }
-    }
-
-    private fun tryAutoToggle() {
-        if (!isAutoActive) return
-
-        if (!isActive) {
-            shouldBeActive = true
-            MouseSensitivityManager.state = SensitivityState.AUTO_REDUCED
-        } else {
-            shouldBeActive = false
-            MouseSensitivityManager.state = SensitivityState.UNCHANGED
-        }
-    }
-
-    private fun autoToggleIfNeeded() {
-        val shouldReduce = config.mode.any {
-            when (it) {
-                SensitivityReducerConfig.Mode.TOOL -> isHoldingTool()
-                SensitivityReducerConfig.Mode.FISHING_ROD -> isHoldingFishingRod()
-                SensitivityReducerConfig.Mode.KEYBIND -> isHoldingKey()
-                SensitivityReducerConfig.Mode.MOUSEMAT -> isHoldingMousemat()
+                ChatUtils.debug("SensitivityReducer: Fixed invalid reducingFactor ($this -> $coerced)")
             }
         }
-
-        toggleIfCondition { shouldReduce }
-    }
-
-    private fun toggleIfCondition(check: () -> Boolean) {
-        val conditionMet = check()
-        if (conditionMet xor isActive) autoToggle()
-    }
-
-    private fun autoToggle() {
-        if (!config.enabled.get()) {
-            if (isActive) disable()
-            return
-        }
-        if (config.onlyPlot.get() && inBarn) {
-            if (isActive) disable()
-            return
-        }
-        if (config.onGround.get() && !onGround) {
-            if (isActive) disable()
-            return
-        }
-
-        if (isActive) disable()
-        else enable()
-    }
-
-    private fun disable() {
-        shouldBeActive = false
-        MouseSensitivityManager.state = SensitivityState.UNCHANGED
-    }
-
-    private fun enable() {
-        shouldBeActive = true
-        MouseSensitivityManager.state = SensitivityState.AUTO_REDUCED
-    }
-
-    private fun manualToggle() {
-        if (!isActive) {
-            shouldBeActive = true
-            MouseSensitivityManager.state = SensitivityState.MANUAL_REDUCED
-            ChatUtils.chat(
-                "§bMouse sensitivity is now lowered. " +
-                    "Type /shsensreduce to restore your sensitivity.",
-            )
-        } else {
-            shouldBeActive = false
-            MouseSensitivityManager.state = SensitivityState.UNCHANGED
-            ChatUtils.chat("§bMouse sensitivity is now restored.")
+        config.onGroundTolerance.afterChange {
+            val coerced = coerceIn(ON_GROUND_TOLERANCE_HARD_BOUNDS)
+            if (this != coerced) {
+                config.onGroundTolerance.set(coerced)
+                ChatUtils.debug("SensitivityReducer: Fixed invalid onGroundTolerance ($this -> $coerced)")
+            }
         }
     }
 
@@ -175,18 +138,51 @@ object SensitivityReducer {
         event.registerBrigadier("shsensreduce") {
             description = "Lowers the mouse sensitivity for easier small adjustments (for farming)"
             category = CommandCategory.USERS_ACTIVE
-            simpleCallback(::manualToggle)
+            simpleCallback {
+                if (manualState != SensitivityState.REDUCED) {
+                    manualState = SensitivityState.REDUCED
+                    ChatUtils.chat(
+                        "§bMouse sensitivity is now lowered. Type /shsensreduce to restore your sensitivity.",
+                        messageId = commandMessageId,
+                    )
+                } else {
+                    manualState = null
+                    ChatUtils.chat("§bMouse sensitivity is now restored.", messageId = commandMessageId)
+                }
+            }
+        }
+        event.registerBrigadier("shmouselock") {
+            description = "Lock/Unlock the mouse so it will no longer rotate the player (for farming)"
+            category = CommandCategory.USERS_ACTIVE
+            aliases = listOf("shlockmouse")
+            simpleCallback {
+                if (manualState != SensitivityState.LOCKED) {
+                    manualState = SensitivityState.LOCKED
+                    ChatUtils.chat("§bMouse rotation is now locked. Type /shlockmouse to unlock your mouse.", messageId = commandMessageId)
+                } else {
+                    manualState = null
+                    ChatUtils.chat("§bMouse rotation is now unlocked.", messageId = commandMessageId)
+                }
+            }
         }
     }
 
     @HandleEvent
     fun onGuiRenderOverlay() {
-        if (!isActive) return
         if (!config.showGui) return
-        config.position.renderRenderable(
-            Renderable.text("§eSensitivity Lowered"),
-            posLabel = "Sensitivity Lowered",
-        )
+
+        if (SensitivityState.UNCHANGED.isActive()) return
+        else if (SensitivityState.REDUCED.isActive()) {
+            config.position.renderRenderable(
+                Renderable.text("§eSensitivity Lowered"),
+                posLabel = "Sensitivity Lowered",
+            )
+        } else if (SensitivityState.LOCKED.isActive()) {
+            config.position.renderRenderable(
+                Renderable.text("§eMouse Locked"),
+                posLabel = "Mouse Locked",
+            )
+        }
     }
 
     @HandleEvent
@@ -205,10 +201,7 @@ object SensitivityReducer {
             }
             newList
         }
+        // disableOnTeleport is default disabled, but we want to keep existing behavior when updating
+        event.add(133, "$base/disableOnTeleport", { JsonPrimitive(true) })
     }
-
-    private fun isHoldingMousemat(): Boolean = GardenApi.itemInHand?.getInternalName() == SQUEAKY_MOUSEMAT
-    private fun isHoldingTool(): Boolean = GardenApi.toolInHand != null
-    private fun isHoldingFishingRod(): Boolean = FishingApi.holdingRod
-    private fun isHoldingKey(): Boolean = config.keybind.isKeyHeld() && Minecraft.getInstance().screen == null
 }
