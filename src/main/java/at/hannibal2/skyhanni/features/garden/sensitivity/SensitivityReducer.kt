@@ -91,7 +91,7 @@ object SensitivityReducer {
     private fun shouldAutoReduce(): Boolean {
         if (!GardenApi.inGarden() || !config.enabled.get()) return false
 
-        val shouldReduce = (config.mode.any {
+        if (config.mode.none {
             when (it) {
                 SensitivityReducerConfig.Mode.TOOL -> GardenApi.toolInHand != null
                 SensitivityReducerConfig.Mode.FISHING_ROD -> FishingApi.holdingRod
@@ -100,8 +100,7 @@ object SensitivityReducer {
                 SensitivityReducerConfig.Mode.VACUUM -> PestApi.hasVacuumInHand()
                 SensitivityReducerConfig.Mode.SPRAYONATOR -> PestApi.hasSprayonatorInHand()
             }
-        })
-        if (!shouldReduce) return false
+        }) return false
 
         if (config.onlyPlot.get() && GardenApi.onUnfarmablePlot) return false
 
@@ -120,7 +119,7 @@ object SensitivityReducer {
     @HandleEvent
     fun onConfigLoad() {
         config.reducingFactor.afterChange {
-            val coerced = coerceIn(1f..50f)
+            val coerced = coerceIn(1f..100f)
             if (this != coerced) {
                 config.reducingFactor.set(coerced)
                 ChatUtils.debug("SensitivityReducer: Fixed invalid reducingFactor ($this -> $coerced)")
@@ -202,5 +201,6 @@ object SensitivityReducer {
             }
             newList
         }
+        event.transform(133, "$base.reducingFactor") { (100f / it.coerceIn(1f..100f)).roundToInt() }
     }
 }
