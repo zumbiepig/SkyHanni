@@ -11,23 +11,10 @@ object MouseSensitivityManager {
     private val config get() = SkyHanniMod.feature.garden.sensitivityReducer
 
     private var state: SensitivityState = SensitivityState.UNCHANGED
-        set(value) {
-            field = value
-            lastOriginal = Float.NaN
-            lastReduced = Float.NaN
-        }
 
-    private var lastOriginal = Float.NaN
-    private var lastReduced = Float.NaN
-
-    fun getSensitivity(original: Float): Float {
-        // if sensitivity has not changed, no need to recalculate
-        if (lastOriginal != original) {
-            lastOriginal = original
-            lastReduced = state.transform(original)
-        }
-
-        return lastReduced
+    @JvmStatic
+    fun remapSensitivity(sens: Double): Double {
+        return state.get()
     }
 
     @HandleEvent
@@ -38,12 +25,13 @@ object MouseSensitivityManager {
         }
     }
 
-    enum class SensitivityState(val transform: ((Float) -> Float)) {
-        UNCHANGED({ it }),
-        REDUCED({ it * config.reducingFactor.get() }),
+    enum class SensitivityState(modifier: (() -> Float)) {
+        UNCHANGED({ 1 }),
+        REDUCED({ config.reducingFactor.get() }),
         LOCKED({ 0 }),
         ;
 
+        val modifier get() = modifier()
         fun isActive() = state == this
         fun setActive() = if (state != this) state = this
     }

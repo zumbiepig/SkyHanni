@@ -1,6 +1,6 @@
 package at.hannibal2.skyhanni.mixins.transformers;
 
-import at.hannibal2.skyhanni.mixins.hooks.MouseSensitivityHook;
+import at.hannibal2.skyhanni.features.garden.sensitivity.MouseSensitivityManager;
 import at.hannibal2.skyhanni.utils.DelayedRun;
 import at.hannibal2.skyhanni.utils.compat.MouseCompat;
 import com.llamalad7.mixinextras.sugar.Local;
@@ -50,8 +50,9 @@ public class MixinMouse {
         MouseCompat.INSTANCE.setTimeDelta(timeDelta * 10000);
     }
 
-    @ModifyVariable(method = "turnPlayer", at = @At("STORE"), ordinal = 1)
-    private double modifyMouseX(double value) {
-        return MouseSensitivityHook.remapSensitivity((float) value);
+    @ModifyExpressionValue(method = "turnPlayer", at = @At("MIXINEXTRAS:EXPRESSION"))
+    @Expression("this.minecraft.options.sensitivity().get()")
+    private double modifyMouseSensitivity(double value) {
+        return MouseSensitivityManager.remapSensitivity(value);
     }
 }
