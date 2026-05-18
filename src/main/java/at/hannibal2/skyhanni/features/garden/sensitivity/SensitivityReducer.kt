@@ -65,15 +65,11 @@ object SensitivityReducer {
 
     @HandleEvent
     fun onChat(event: SkyHanniChatEvent.Allow) {
-        if (!config.disableOnTeleport.get()) return
-        manualState?.let {
-            if (event.chatComponent.let { gardenTeleportPattern.matches(it) || warpingPattern.matches(it) }) {
-                manualState = null
-            val text = if (it == SensitivityReducer.REDUCED)
-        
-            
+        if (manualState == null || !config.disableOnTeleport.get()) return
+        if (event.chatComponent.let { gardenTeleportPattern.matches(it) || warpingPattern.matches(it) }) {
+            val text = if (manualState == SensitivityState.REDUCED) "sensitivity has been restored" else "rotation has been unlocked"
             manualState = null
-            ChatUtils.chat("§bMouse rotation has been unlocked because you teleported.", messageId = commandMessageId)
+            ChatUtils.notifyOrDisable("§bMouse $text because you teleported.", config::disableOnTeleport, messageId = commandMessageId)
         }
     }
 
