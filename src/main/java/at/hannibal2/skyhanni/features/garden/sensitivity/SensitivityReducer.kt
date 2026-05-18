@@ -36,9 +36,6 @@ object SensitivityReducer {
 
     private val SQUEAKY_MOUSEMAT = "SQUEAKY_MOUSEMAT".toInternalName()
 
-    val REDUCING_FACTOR_HARD_BOUNDS = 1f..50f
-    private val ON_GROUND_TOLERANCE_HARD_BOUNDS = 0f..2f
-
     private var manualState: SensitivityState? = null
         set(value) {
             field = value
@@ -109,9 +106,10 @@ object SensitivityReducer {
         if (config.onlyPlot.get() && GardenApi.onUnfarmablePlot) return false
 
         if (config.onGround.get()) {
-            // return false if the player is not on/near the ground
-            val tolerance = config.onGroundTolerance.get().coerceIn(ON_GROUND_TOLERANCE_HARD_BOUNDS)
+            // explanation: player is onGround, tolerance > 0, player isnt flying, raycast down
+            val tolerance = config.onGroundTolerance.get()
             if (!PlayerUtils.onGround() && (tolerance == 0f || PlayerUtils.isFlying() || PlayerUtils.getLocation().let {
+                    // return if miss != false, miss == false means the raycast hit a block (player is close to ground)
                     BlockUtils.raycast(it, it.down(tolerance))?.miss != false
                 })) return false
         }
@@ -122,14 +120,14 @@ object SensitivityReducer {
     @HandleEvent
     fun onConfigLoad() {
         config.reducingFactor.afterChange {
-            val coerced = coerceIn(REDUCING_FACTOR_HARD_BOUNDS)
+            val coerced = coerceIn(1f..50f)
             if (this != coerced) {
                 config.reducingFactor.set(coerced)
                 ChatUtils.debug("SensitivityReducer: Fixed invalid reducingFactor ($this -> $coerced)")
             }
         }
         config.onGroundTolerance.afterChange {
-            val coerced = coerceIn(ON_GROUND_TOLERANCE_HARD_BOUNDS)
+            val coerced = coerceAtLeast(0f..2f)
             if (this != coerced) {
                 config.onGroundTolerance.set(coerced)
                 ChatUtils.debug("SensitivityReducer: Fixed invalid onGroundTolerance ($this -> $coerced)")
