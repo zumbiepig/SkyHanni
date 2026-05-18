@@ -65,8 +65,16 @@ object SensitivityReducer {
 
     @HandleEvent
     fun onChat(event: SkyHanniChatEvent.Allow) {
-        if (config.disableOnTeleport.get() && (event.chatComponent.let { gardenTeleportPattern.matches(it) || warpingPattern.matches(it) })) manualState =
-            null
+        if (!config.disableOnTeleport.get()) return
+        manualState?.let {
+            if (event.chatComponent.let { gardenTeleportPattern.matches(it) || warpingPattern.matches(it) }) {
+                manualState = null
+            val text = if (it == SensitivityReducer.REDUCED)
+        
+            
+            manualState = null
+            ChatUtils.chat("§bMouse rotation has been unlocked because you teleported.", messageId = commandMessageId)
+        }
     }
 
 
@@ -171,16 +179,15 @@ object SensitivityReducer {
     fun onGuiRenderOverlay() {
         if (!config.showGui) return
 
-        if (SensitivityState.UNCHANGED.isActive()) return
-        else if (SensitivityState.REDUCED.isActive()) {
+        if (SensitivityState.REDUCED.isActive()) {
             config.position.renderRenderable(
                 Renderable.text("§eSensitivity Lowered"),
-                posLabel = "Sensitivity Lowered",
+                posLabel = "Sensitivity Reducer",
             )
         } else if (SensitivityState.LOCKED.isActive()) {
             config.position.renderRenderable(
                 Renderable.text("§eMouse Locked"),
-                posLabel = "Mouse Locked",
+                posLabel = "Sensitivity Reducer",
             )
         }
     }
@@ -201,7 +208,5 @@ object SensitivityReducer {
             }
             newList
         }
-        // disableOnTeleport is default disabled, but we want to keep existing behavior when updating
-        event.add(133, "$base/disableOnTeleport", { JsonPrimitive(true) })
     }
 }
