@@ -75,7 +75,7 @@ class SensitivityReducerConfig {
     @Expose
     @ConfigOption(name = "Auto disable on teleport", desc = "Disable /shmouselock and /shsensreduce when teleporting to another plot.")
     @ConfigEditorBoolean
-    val disableOnTeleport: Property<Boolean> = Property.of(false)
+    val disableOnTeleport: Property<Boolean> = Property.of(true)
 
     @Expose
     @ConfigLink(owner = SensitivityReducerConfig::class, field = "showGui")
