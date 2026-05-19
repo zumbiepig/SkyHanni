@@ -1,5 +1,6 @@
 package at.hannibal2.skyhanni.mixins.transformers;
 
+import at.hannibal2.skyhanni.features.garden.farming.GardenCustomKeybinds;
 import at.hannibal2.skyhanni.features.garden.sensitivity.MouseSensitivityManager;
 import at.hannibal2.skyhanni.utils.DelayedRun;
 import at.hannibal2.skyhanni.utils.compat.MouseCompat;
@@ -52,6 +53,13 @@ public class MixinMouse {
         MouseCompat.INSTANCE.setTimeDelta(timeDelta * 10000);
     }
 
+    @Inject(
+        method = "grabMouse",
+        at = @At(value = "INVOKE", target = "Lnet/minecraft/client/KeyMapping;setAll()V")
+    )
+    private void onRestoreKeyStateAfterMouseGrab(CallbackInfo ci) {
+        GardenCustomKeybinds.onMouseGrabRestoringKeyState();
+    }
 
     @Definition(id = "minecraft", field = "Lnet/minecraft/client/MouseHandler;minecraft:Lnet/minecraft/client/Minecraft;")
     @Definition(id = "options", field = "Lnet/minecraft/client/Minecraft;options:Lnet/minecraft/client/Options;")
