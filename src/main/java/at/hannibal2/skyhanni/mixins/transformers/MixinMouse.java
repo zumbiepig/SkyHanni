@@ -65,9 +65,9 @@ public class MixinMouse {
     @Definition(id = "options", field = "Lnet/minecraft/client/Minecraft;options:Lnet/minecraft/client/Options;")
     @Definition(id = "sensitivity", method = "Lnet/minecraft/client/Options;sensitivity()Lnet/minecraft/client/OptionInstance;")
     @Definition(id = "get", method = "Lnet/minecraft/client/OptionInstance;get()Ljava/lang/Object;")
-    @Expression("this.minecraft.options.sensitivity().get()")
+    @Expression("((Double) this.minecraft.options.sensitivity().get())")
     @ModifyExpressionValue(method = "turnPlayer", at = @At("MIXINEXTRAS:EXPRESSION"))
-    private Object modifyMouseSensitivity(Object original) {
-        return MouseSensitivityManager.remapSensitivity((Double) original);
+    private Double modifyMouseSensitivity(Double original) {
+        return MouseSensitivityManager.remapSensitivity(original);
     }
 }
