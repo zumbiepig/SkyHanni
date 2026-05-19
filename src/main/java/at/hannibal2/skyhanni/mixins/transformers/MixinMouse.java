@@ -3,15 +3,17 @@ package at.hannibal2.skyhanni.mixins.transformers;
 import at.hannibal2.skyhanni.features.garden.sensitivity.MouseSensitivityManager;
 import at.hannibal2.skyhanni.utils.DelayedRun;
 import at.hannibal2.skyhanni.utils.compat.MouseCompat;
+import com.llamalad7.mixinextras.expression.Definition;
+import com.llamalad7.mixinextras.expression.Expression;
+import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.sugar.Local;
 import net.minecraft.client.MouseHandler;
+import net.minecraft.client.input.MouseButtonInfo;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import net.minecraft.client.input.MouseButtonInfo;
 
 @Mixin(MouseHandler.class)
 public class MixinMouse {
@@ -50,9 +52,14 @@ public class MixinMouse {
         MouseCompat.INSTANCE.setTimeDelta(timeDelta * 10000);
     }
 
-    @ModifyExpressionValue(method = "turnPlayer", at = @At("MIXINEXTRAS:EXPRESSION"))
+
+    @Definition(id = "minecraft", field = "Lnet/minecraft/client/MouseHandler;minecraft:Lnet/minecraft/client/Minecraft;")
+    @Definition(id = "options", field = "Lnet/minecraft/client/Minecraft;options:Lnet/minecraft/client/Options;")
+    @Definition(id = "sensitivity", method = "Lnet/minecraft/client/Options;sensitivity()Lnet/minecraft/client/OptionInstance;")
+    @Definition(id = "get", method = "Lnet/minecraft/client/OptionInstance;get()Ljava/lang/Object;")
     @Expression("this.minecraft.options.sensitivity().get()")
-    private double modifyMouseSensitivity(double value) {
-        return MouseSensitivityManager.remapSensitivity(value);
+    @ModifyExpressionValue(method = "turnPlayer", at = @At("MIXINEXTRAS:EXPRESSION"))
+    private double modifyMouseSensitivity(double original) {
+        return MouseSensitivityManager.remapSensitivity((float) original);
     }
 }

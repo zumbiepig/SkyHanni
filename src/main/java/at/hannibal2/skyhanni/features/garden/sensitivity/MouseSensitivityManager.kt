@@ -13,8 +13,8 @@ object MouseSensitivityManager {
     private var state: SensitivityState = SensitivityState.UNCHANGED
 
     @JvmStatic
-    fun remapSensitivity(sens: Double): Double {
-        return state.get()
+    fun remapSensitivity(original: Double): Double {
+        return original * state.getFactor()
     }
 
     @HandleEvent
@@ -25,14 +25,15 @@ object MouseSensitivityManager {
         }
     }
 
-    enum class SensitivityState(modifier: (() -> Float)) {
-        UNCHANGED({ 1 }),
-        REDUCED({ config.reducingFactor.get() }),
-        LOCKED({ 0 }),
+    enum class SensitivityState(val getFactor: () -> Double) {
+        UNCHANGED({ 1.0 }),
+        REDUCED({ config.reducingFactor.get().toDouble() }),
+        LOCKED({ 0.0 }),
         ;
 
-        val modifier get() = modifier()
         fun isActive() = state == this
-        fun setActive() = if (state != this) state = this
+        fun setActive() {
+            state = this
+        }
     }
 }

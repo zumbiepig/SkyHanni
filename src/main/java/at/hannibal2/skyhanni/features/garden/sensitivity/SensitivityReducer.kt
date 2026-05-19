@@ -27,6 +27,7 @@ import at.hannibal2.skyhanni.utils.repopatterns.RepoPattern
 import com.google.gson.JsonArray
 import com.google.gson.JsonPrimitive
 import net.minecraft.client.Minecraft
+import kotlin.math.roundToInt
 
 @SkyHanniModule
 object SensitivityReducer {
@@ -62,9 +63,10 @@ object SensitivityReducer {
 
     @HandleEvent
     fun onChat(event: SkyHanniChatEvent.Allow) {
-        if (manualState == null || !config.disableOnTeleport.get()) return
+        if (!config.disableOnTeleport.get()) return
+        val state = manualState ?: return
         if (event.chatComponent.let { gardenTeleportPattern.matches(it) || warpingPattern.matches(it) }) {
-            val text = if (manualState == SensitivityState.REDUCED) "sensitivity has been restored" else "rotation has been unlocked"
+            val text = if (state == SensitivityState.REDUCED) "sensitivity has been restored" else "rotation has been unlocked"
             manualState = null
             ChatUtils.notifyOrDisable("§bMouse $text because you teleported.", config::disableOnTeleport, messageId = commandMessageId)
         }
@@ -126,7 +128,7 @@ object SensitivityReducer {
             }
         }
         config.onGroundTolerance.afterChange {
-            val coerced = coerceAtLeast(0f..2f)
+            val coerced = coerceIn(0f..2f)
             if (this != coerced) {
                 config.onGroundTolerance.set(coerced)
                 ChatUtils.debug("SensitivityReducer: Fixed invalid onGroundTolerance ($this -> $coerced)")
@@ -201,6 +203,8 @@ object SensitivityReducer {
             }
             newList
         }
-        event.transform(133, "$base.reducingFactor") { (100f / it.coerceIn(1f..100f)).roundToInt() }
+        event.transform(134, "$base.reducingFactor") {
+            JsonPrimitive((100f / it.asFloat.coerceIn(1f..100f)).roundToInt())
+        }
     }
 }
