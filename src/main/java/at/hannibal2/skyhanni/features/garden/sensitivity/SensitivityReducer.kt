@@ -109,7 +109,7 @@ object SensitivityReducer {
         if (config.onGround.get()) {
             // explanation: player is onGround, tolerance > 0, player isnt flying, raycast down
             val tolerance = config.onGroundTolerance.get()
-            if (!PlayerUtils.onGround() && (tolerance == 0f || PlayerUtils.isFlying() || PlayerUtils.getLocation().let {
+            if (!PlayerUtils.onGround() && (tolerance == 0.0 || PlayerUtils.isFlying() || PlayerUtils.getLocation().let {
                     // return if miss != false, miss == false means the raycast hit a block (player is close to ground)
                     BlockUtils.raycast(it, it.down(tolerance))?.miss != false
                 })) return false
@@ -121,14 +121,14 @@ object SensitivityReducer {
     @HandleEvent
     fun onConfigLoad() {
         config.reducingFactor.afterChange {
-            val coerced = coerceIn(1f..100f)
+            val coerced = coerceIn(0.0..1.0)
             if (this != coerced) {
                 config.reducingFactor.set(coerced)
                 ChatUtils.debug("SensitivityReducer: Fixed invalid reducingFactor ($this -> $coerced)")
             }
         }
         config.onGroundTolerance.afterChange {
-            val coerced = coerceIn(0f..2f)
+            val coerced = coerceIn(0.0..2.0)
             if (this != coerced) {
                 config.onGroundTolerance.set(coerced)
                 ChatUtils.debug("SensitivityReducer: Fixed invalid onGroundTolerance ($this -> $coerced)")
@@ -204,7 +204,7 @@ object SensitivityReducer {
             newList
         }
         event.transform(134, "$base.reducingFactor") {
-            JsonPrimitive((100f / it.asFloat.coerceIn(1f..100f)).roundToInt())
+            JsonPrimitive((1f / it.asFloat.coerceIn(1f..100f)).roundToInt().toDouble().coerceIn(0.0..1.0))
         }
     }
 }

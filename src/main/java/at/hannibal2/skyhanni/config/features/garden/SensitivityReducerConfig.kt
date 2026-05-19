@@ -41,8 +41,8 @@ class SensitivityReducerConfig {
 
     @Expose
     @ConfigOption(name = "Reducing factor", desc = "Change by how much the sensitivity is lowered by.")
-    @ConfigEditorSlider(minValue = 1f, maxValue = 50f, minStep = 1f)
-    val reducingFactor: Property<Float> = Property.of(15f)
+    @ConfigEditorSlider(minValue = 0.01f, maxValue = 1f, minStep = 0.01f)
+    val reducingFactor: Property<Double> = Property.of(0.10)
 
     @Expose
     @ConfigOption(name = "Lock mouse", desc = "Lock the mouse instead of reducing sensitivity.")
@@ -65,7 +65,7 @@ class SensitivityReducerConfig {
         desc = "How close to ground counts as on ground when 'Only on Ground' is enabled. Useful for farms with small height drops.",
     )
     @ConfigEditorSlider(minValue = 0f, maxValue = 2f, minStep = 1f / 16f) // Block heights are multiples of 1/16
-    val onGroundTolerance: Property<Float> = Property.of(2f / 16f) // dirt to soulsand is 2 pixels
+    val onGroundTolerance: Property<Double> = Property.of(2.0 / 16.0) // dirt to soulsand is 2 pixels
 
     @Expose
     @ConfigOption(name = "Disable in Barn or Greenhouse", desc = "Disable reduced sensitivity in barn and greenhouse plots.")

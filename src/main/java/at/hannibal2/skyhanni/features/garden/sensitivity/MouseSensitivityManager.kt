@@ -27,7 +27,7 @@ object MouseSensitivityManager {
 
     enum class SensitivityState(val getFactor: () -> Double) {
         UNCHANGED({ 1.0 }),
-        REDUCED({ config.reducingFactor.get().toDouble() }),
+        REDUCED({ config.reducingFactor.get() }),
         LOCKED({ 0.0 }),
         ;
 
