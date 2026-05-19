@@ -120,7 +120,7 @@ object SensitivityReducer {
 
     @HandleEvent
     fun onConfigLoad() {
-        config.reducingFactor.afterChange {
+        /*config.reducingFactor.afterChange {
             val coerced = coerceIn(0.0..1.0)
             if (this != coerced) {
                 config.reducingFactor.set(coerced)
@@ -133,7 +133,7 @@ object SensitivityReducer {
                 config.onGroundTolerance.set(coerced)
                 ChatUtils.debug("SensitivityReducer: Fixed invalid onGroundTolerance ($this -> $coerced)")
             }
-        }
+        }*/
     }
 
     @HandleEvent
