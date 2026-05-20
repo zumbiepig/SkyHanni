@@ -8,7 +8,6 @@ import com.llamalad7.mixinextras.expression.Definition;
 import com.llamalad7.mixinextras.expression.Expression;
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.sugar.Local;
-import com.llamalad7.mixinextras.sugar.ref.LocalDoubleRef;
 import net.minecraft.client.MouseHandler;
 import net.minecraft.client.input.MouseButtonInfo;
 import org.spongepowered.asm.mixin.Mixin;
@@ -16,6 +15,7 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 
 @Mixin(MouseHandler.class)
 public class MixinMouse {
@@ -48,10 +48,11 @@ public class MixinMouse {
 
     @Inject(
         method = "handleAccumulatedMovement",
-        at = @At(value = "INVOKE", target = "Lnet/minecraft/client/Minecraft;isWindowActive()Z")
+        at = @At(value = "INVOKE", target = "Lnet/minecraft/client/Minecraft;isWindowActive()Z"),
+        locals = LocalCapture.CAPTURE_FAILHARD
     )
-    private void onMouseButtonHead(CallbackInfo ci, @Local(ordinal = 0) double timeDelta) {
-        MouseCompat.INSTANCE.setTimeDelta(timeDelta * 10000.0);
+    private void onMouseButtonHead(CallbackInfo ci, double timeDelta) {
+        MouseCompat.INSTANCE.setTimeDelta(timeDelta * 10000);
     }
 
     @Inject(
