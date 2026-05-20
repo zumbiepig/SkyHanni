@@ -9,8 +9,10 @@ class SensitivityReducerTest {
     @Test
     fun `locked sensitivity maps to exact zero`() {
         try {
-            MouseSensitivityManager.SensitivityState.LOCKED.setActive()
+            MouseSensitivityManager.SensitivityState.UNCHANGED.setActive()
+            assertEquals(1.0, MouseSensitivityManager.remapSensitivity(1.0))
 
+            MouseSensitivityManager.SensitivityState.LOCKED.setActive()
             assertEquals(0.0, MouseSensitivityManager.remapSensitivity(1.0))
         } finally {
             MouseSensitivityManager.SensitivityState.UNCHANGED.setActive()
