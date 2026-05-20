@@ -6,11 +6,11 @@ import at.hannibal2.skyhanni.config.ConfigUpdaterMigrator
 import at.hannibal2.skyhanni.config.commands.CommandCategory
 import at.hannibal2.skyhanni.config.commands.CommandRegistrationEvent
 import at.hannibal2.skyhanni.config.features.garden.SensitivityReducerConfig
+import at.hannibal2.skyhanni.events.DebugDataCollectEvent
 import at.hannibal2.skyhanni.events.chat.SkyHanniChatEvent
 import at.hannibal2.skyhanni.features.fishing.FishingApi
 import at.hannibal2.skyhanni.features.garden.GardenApi
 import at.hannibal2.skyhanni.features.garden.pests.PestApi
-import at.hannibal2.skyhanni.features.garden.sensitivity.MouseSensitivityManager.SensitivityState
 import at.hannibal2.skyhanni.skyhannimodule.SkyHanniModule
 import at.hannibal2.skyhanni.utils.BlockUtils
 import at.hannibal2.skyhanni.utils.ChatUtils
@@ -33,9 +33,12 @@ import kotlin.math.roundToInt
 object SensitivityReducer {
 
     private val config get() = SkyHanniMod.feature.garden.sensitivityReducer
-    private val commandMessageId = ChatUtils.getUniqueMessageId()
 
     private val SQUEAKY_MOUSEMAT = "SQUEAKY_MOUSEMAT".toInternalName()
+
+    private val commandMessageId = ChatUtils.getUniqueMessageId()
+
+    private var state: SensitivityState = SensitivityState.UNCHANGED
 
     private var manualState: SensitivityState? = null
         set(value) {
@@ -61,6 +64,21 @@ object SensitivityReducer {
         "§7(?:Warping|Warping you to your SkyBlock island|Warping using transfer token|Finding player|Sending a visit request)\\.\\.\\.",
     )
 
+    private enum class SensitivityState(val getFactor: () -> Double) {
+        UNCHANGED({ 1.0 }),
+        REDUCED({ config.reducingFactor.get() }),
+        LOCKED({ 0.0 }),
+        ;
+
+        fun isActive() = state == this
+        fun setActive() { state = this }
+    }
+
+    @JvmStatic
+    fun remapSensitivity(original: Double): Double {
+        return original * state.getFactor()
+    }
+
     @HandleEvent
     fun onChat(event: SkyHanniChatEvent.Allow) {
         if (!config.disableOnTeleport.get()) return
@@ -68,10 +86,9 @@ object SensitivityReducer {
         if (event.chatComponent.let { gardenTeleportPattern.matches(it) || warpingPattern.matches(it) }) {
             val text = if (state == SensitivityState.REDUCED) "sensitivity has been restored" else "rotation has been unlocked"
             manualState = null
-            ChatUtils.notifyOrDisable("§bMouse $text because you teleported.", config::disableOnTeleport, messageId = commandMessageId)
+            ChatUtils.notifyOrDisable("Mouse $text because you teleported.", config::disableOnTeleport, messageId = commandMessageId)
         }
     }
-
 
     @HandleEvent
     fun onWorldChange() {
@@ -145,12 +162,12 @@ object SensitivityReducer {
                 if (manualState != SensitivityState.REDUCED) {
                     manualState = SensitivityState.REDUCED
                     ChatUtils.chat(
-                        "§bMouse sensitivity is now lowered. Type /shsensreduce to restore your sensitivity.",
+                        "Mouse sensitivity is now lowered. Type /shsensreduce to restore your sensitivity.",
                         messageId = commandMessageId,
                     )
                 } else {
                     manualState = null
-                    ChatUtils.chat("§bMouse sensitivity is now restored.", messageId = commandMessageId)
+                    ChatUtils.chat("Mouse sensitivity is now restored.", messageId = commandMessageId)
                 }
             }
         }
@@ -161,10 +178,10 @@ object SensitivityReducer {
             simpleCallback {
                 if (manualState != SensitivityState.LOCKED) {
                     manualState = SensitivityState.LOCKED
-                    ChatUtils.chat("§bMouse rotation is now locked. Type /shlockmouse to unlock your mouse.", messageId = commandMessageId)
+                    ChatUtils.chat("Mouse rotation is now locked. Type /shlockmouse to unlock your mouse.", messageId = commandMessageId)
                 } else {
                     manualState = null
-                    ChatUtils.chat("§bMouse rotation is now unlocked.", messageId = commandMessageId)
+                    ChatUtils.chat("Mouse rotation is now unlocked.", messageId = commandMessageId)
                 }
             }
         }
@@ -184,6 +201,15 @@ object SensitivityReducer {
                 Renderable.text("§eMouse Locked"),
                 posLabel = "Sensitivity Reducer",
             )
+        }
+    }
+
+    @HandleEvent
+    fun onDebugDataCollect(event: DebugDataCollectEvent) {
+        event.title("Sensitivity Reducer")
+        event.addData {
+            add("current state: $state")
+            add("manual state: $manualState")
         }
     }
 

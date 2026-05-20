@@ -1,7 +1,7 @@
 package at.hannibal2.skyhanni.mixins.transformers;
 
 import at.hannibal2.skyhanni.features.garden.farming.GardenCustomKeybinds;
-import at.hannibal2.skyhanni.features.garden.sensitivity.MouseSensitivityManager;
+import at.hannibal2.skyhanni.features.garden.sensitivity.SensitivityReducer;
 import at.hannibal2.skyhanni.utils.DelayedRun;
 import at.hannibal2.skyhanni.utils.compat.MouseCompat;
 import com.llamalad7.mixinextras.expression.Definition;
@@ -14,6 +14,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.Slice;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 
@@ -48,10 +49,10 @@ public class MixinMouse {
 
     @Inject(
         method = "handleAccumulatedMovement",
-        at = @At(value = "INVOKE", target = "Lnet/minecraft/client/Minecraft;isWindowActive()Z"),
-        locals = LocalCapture.CAPTURE_FAILHARD
+        at = @At(value = "INVOKE", target = "Lnet/minecraft/client/Minecraft;isWindowActive()Z")
+        // locals = LocalCapture.CAPTURE_FAILHARD
     )
-    private void onMouseButtonHead(CallbackInfo ci, double timeDelta) {
+    private void onMouseButtonHead(CallbackInfo ci, @Local(ordinal = 0) double timeDelta) {
         MouseCompat.INSTANCE.setTimeDelta(timeDelta * 10000);
     }
 
@@ -63,13 +64,14 @@ public class MixinMouse {
         GardenCustomKeybinds.onMouseGrabRestoringKeyState();
     }
 
-    @Definition(id = "minecraft", field = "Lnet/minecraft/client/MouseHandler;minecraft:Lnet/minecraft/client/Minecraft;")
-    @Definition(id = "options", field = "Lnet/minecraft/client/Minecraft;options:Lnet/minecraft/client/Options;")
-    @Definition(id = "sensitivity", method = "Lnet/minecraft/client/Options;sensitivity()Lnet/minecraft/client/OptionInstance;")
-    @Definition(id = "get", method = "Lnet/minecraft/client/OptionInstance;get()Ljava/lang/Object;")
-    @Expression("(Double) this.minecraft.options.sensitivity().get()")
-    @ModifyExpressionValue(method = "turnPlayer", at = @At("MIXINEXTRAS:EXPRESSION"))
-    private Double modifyMouseSensitivity(Double original) {
-        return MouseSensitivityManager.remapSensitivity(original);
+    @ModifyExpressionValue(
+        method = "turnPlayer",
+        at = @At(value = "INVOKE", target = "Lnet/minecraft/client/OptionInstance;get()Ljava/lang/Object;"),
+        slice = @Slice(
+            from = @At(value = "INVOKE", target = "Lnet/minecraft/client/Options;sensitivity()Lnet/minecraft/client/OptionInstance;")
+        )
+    )
+    private Object modifyMouseSensitivity(Object original) {
+        return SensitivityReducer.remapSensitivity((Double) original);
     }
 }
