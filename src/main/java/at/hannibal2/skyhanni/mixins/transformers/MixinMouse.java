@@ -50,8 +50,8 @@ public class MixinMouse {
         method = "handleAccumulatedMovement",
         at = @At(value = "INVOKE", target = "Lnet/minecraft/client/Minecraft;isWindowActive()Z")
     )
-    private void onMouseButtonHead(CallbackInfo ci, @Local(ordinal = 0) LocalDoubleRef timeDelta) {
-        MouseCompat.INSTANCE.setTimeDelta(timeDelta * 10000);
+    private void onMouseButtonHead(CallbackInfo ci, @Local(ordinal = 0) double timeDelta) {
+        MouseCompat.INSTANCE.setTimeDelta(timeDelta * 10000.0);
     }
 
     @Inject(
