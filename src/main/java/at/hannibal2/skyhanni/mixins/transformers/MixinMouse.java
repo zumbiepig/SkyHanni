@@ -8,6 +8,7 @@ import com.llamalad7.mixinextras.expression.Definition;
 import com.llamalad7.mixinextras.expression.Expression;
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.sugar.Local;
+import com.llamalad7.mixinextras.sugar.ref.LocalDoubleRef;
 import net.minecraft.client.MouseHandler;
 import net.minecraft.client.input.MouseButtonInfo;
 import org.spongepowered.asm.mixin.Mixin;
@@ -49,7 +50,7 @@ public class MixinMouse {
         method = "handleAccumulatedMovement",
         at = @At(value = "INVOKE", target = "Lnet/minecraft/client/Minecraft;isWindowActive()Z")
     )
-    private void onMouseButtonHead(CallbackInfo ci, @Local(ordinal = 0) double timeDelta) {
+    private void onMouseButtonHead(CallbackInfo ci, @Local(ordinal = 0) LocalDoubleRef timeDelta) {
         MouseCompat.INSTANCE.setTimeDelta(timeDelta * 10000);
     }
 
@@ -65,7 +66,7 @@ public class MixinMouse {
     @Definition(id = "options", field = "Lnet/minecraft/client/Minecraft;options:Lnet/minecraft/client/Options;")
     @Definition(id = "sensitivity", method = "Lnet/minecraft/client/Options;sensitivity()Lnet/minecraft/client/OptionInstance;")
     @Definition(id = "get", method = "Lnet/minecraft/client/OptionInstance;get()Ljava/lang/Object;")
-    @Expression("((Double) this.minecraft.options.sensitivity().get())")
+    @Expression("(Double) this.minecraft.options.sensitivity().get()")
     @ModifyExpressionValue(method = "turnPlayer", at = @At("MIXINEXTRAS:EXPRESSION"))
     private Double modifyMouseSensitivity(Double original) {
         return MouseSensitivityManager.remapSensitivity(original);
