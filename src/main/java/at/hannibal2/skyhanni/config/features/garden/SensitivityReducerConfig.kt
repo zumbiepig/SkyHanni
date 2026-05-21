@@ -13,7 +13,7 @@ import org.lwjgl.glfw.GLFW
 
 class SensitivityReducerConfig {
     @Expose
-    @ConfigOption(name = "Enabled", desc = "Lower mouse sensitivity while in the garden.")
+    @ConfigOption(name = "Auto Enable", desc = "Automatically lower mouse sensitivity while in the garden.")
     @ConfigEditorBoolean
     val enabled: Property<Boolean> = Property.of(false)
 
@@ -27,6 +27,8 @@ class SensitivityReducerConfig {
         FISHING_ROD("Fishing Rod"),
         KEYBIND("Holding Keybind"),
         MOUSEMAT("Squeaky Mousemat"),
+        VACUUM("Vacuum"),
+        SPRAYONATOR("Sprayonator"),
         ;
 
         override fun toString() = displayName
@@ -39,8 +41,13 @@ class SensitivityReducerConfig {
 
     @Expose
     @ConfigOption(name = "Reducing factor", desc = "Change by how much the sensitivity is lowered by.")
-    @ConfigEditorSlider(minValue = 1f, maxValue = 50f, minStep = 1f)
-    val reducingFactor: Property<Float> = Property.of(15f)
+    @ConfigEditorSlider(minValue = 0.01f, maxValue = 1f, minStep = 0.01f)
+    val reducingFactor: Property<Double> = Property.of(0.10)
+
+    @Expose
+    @ConfigOption(name = "Lock mouse", desc = "Lock the mouse instead of reducing sensitivity.")
+    @ConfigEditorBoolean
+    val lockMouse: Property<Boolean> = Property.of(false)
 
     @Expose
     @ConfigOption(name = "Show GUI", desc = "Show the GUI element while the feature is enabled.")
@@ -48,16 +55,29 @@ class SensitivityReducerConfig {
     var showGui: Boolean = true
 
     @Expose
-    @ConfigOption(name = "Only in Ground", desc = "Lower sensitivity when standing on the ground.")
+    @ConfigOption(name = "Only on Ground", desc = "When enabled, lower sensitivity only while on or near the ground.")
     @ConfigEditorBoolean
     val onGround: Property<Boolean> = Property.of(false)
 
     @Expose
-    @ConfigOption(name = "Disable in Barn", desc = "Disable reduced sensitivity in barn plot.")
+    @ConfigOption(
+        name = "Only on Ground Tolerance",
+        desc = "How close to ground counts as on ground when 'Only on Ground' is enabled. Useful for farms with small height drops.",
+    )
+    @ConfigEditorSlider(minValue = 0f, maxValue = 2f, minStep = 1f / 16f) // Block heights are multiples of 1/16
+    val onGroundTolerance: Property<Double> = Property.of(2.0 / 16.0) // dirt to soulsand is 2 pixels
+
+    @Expose
+    @ConfigOption(name = "Disable in Barn or Greenhouse", desc = "Disable reduced sensitivity in barn and greenhouse plots.")
     @ConfigEditorBoolean
     val onlyPlot: Property<Boolean> = Property.of(true)
 
     @Expose
+    @ConfigOption(name = "Auto disable on teleport", desc = "Disable /shmouselock and /shsensreduce when teleporting to another plot.")
+    @ConfigEditorBoolean
+    val disableOnTeleport: Property<Boolean> = Property.of(true)
+
+    @Expose
     @ConfigLink(owner = SensitivityReducerConfig::class, field = "showGui")
-    val position: Position = Position(400, 400, 0.8f)
+    val position: Position = Position(400, 400)
 }
