@@ -20,7 +20,6 @@ import at.hannibal2.skyhanni.utils.RegexUtils.matches
 import at.hannibal2.skyhanni.utils.SafeItemStack
 import at.hannibal2.skyhanni.utils.SkyBlockUtils
 import at.hannibal2.skyhanni.utils.StringUtils.removeColor
-import at.hannibal2.skyhanni.utils.StringUtils.removeResets
 import at.hannibal2.skyhanni.utils.StringUtils.trimWhiteSpace
 import at.hannibal2.skyhanni.utils.compat.formattedTextCompatLeadingWhiteLessResets
 import at.hannibal2.skyhanni.utils.repopatterns.RepoPattern
@@ -62,19 +61,19 @@ object MaxwellApi {
     private val patternGroup = RepoPattern.group("data.maxwell")
 
     /**
-     * REGEX-TEST: §eYou selected the §aSighted §epower for your §aAccessory Bag§e!
+     * REGEX-TEST: You selected the Sighted power for your Accessory Bag!
      */
     private val chatPowerPattern by patternGroup.pattern(
         "chat.power",
-        "§eYou selected the §a(?<power>.*) §e(?:power )?for your §aAccessory Bag§e!",
+        "You selected the (?<power>.+) (?:power )?for your Accessory Bag!",
     )
 
     /**
-     * REGEX-TEST: §eYour selected power was set to §r§aSighted§r§e!
+     * REGEX-TEST: Your selected power was set to Sighted!
      */
     private val chatPowerUnlockedPattern by patternGroup.pattern(
         "chat.power.unlocked",
-        "§eYour selected power was set to (?:§r)*§a(?<power>.*)(?:§r)*§e!",
+        "Your selected power was set to (?<power>.+)!",
     )
 
     /**
@@ -127,7 +126,7 @@ object MaxwellApi {
     )
     private val tuningAutoAssignedPattern by patternGroup.pattern(
         "tuningpoints.chat.autoassigned",
-        "§aYour §r§eTuning Points §r§awere auto-assigned as convenience!",
+        "Your Tuning Points were auto-assigned as convenience!",
     )
     private val yourBagsGuiPattern by patternGroup.pattern(
         "gui.yourbags",
@@ -163,11 +162,12 @@ object MaxwellApi {
     @HandleEvent
     fun onChat(event: SkyHanniChatEvent.Allow) {
         if (!isEnabled()) return
-        val message = event.message.trimWhiteSpace().removeResets()
+        val message = event.cleanMessage.trimWhiteSpace()
 
-        chatPowerPattern.tryReadPower(message)
-        chatPowerUnlockedPattern.tryReadPower(message)
-        if (!tuningAutoAssignedPattern.matches(event.message)) return
+        if (chatPowerPattern.tryReadPower(message)) return
+        if (chatPowerUnlockedPattern.tryReadPower(message)) return
+
+        if (!tuningAutoAssignedPattern.matches(event.cleanMessage)) return
         if (tunings.isNullOrEmpty()) return
         with(CustomScoreboard.config) {
             if (!enabled.get() || ScoreboardConfigElement.TUNING !in scoreboardEntries.get()) return
@@ -175,7 +175,7 @@ object MaxwellApi {
         }
     }
 
-    private fun Pattern.tryReadPower(message: String) {
+    private fun Pattern.tryReadPower(message: String): Boolean {
         matchMatcher(message) {
             val power = group("power")
             currentPower = getPowerByNameOrNull(power) ?: run {
@@ -185,9 +185,11 @@ object MaxwellApi {
                     "power" to power,
                     "message" to message,
                 )
-                return
+                return true // we return true because the chat message matched the pattern
             }
+            return true
         }
+        return false
     }
 
     // load earlier, so that other features can already use the api in this event

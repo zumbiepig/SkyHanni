@@ -13,18 +13,18 @@ object GuildApi {
 
     @HandleEvent
     fun onChat(event: SkyHanniChatEvent.Allow) {
-        val message = event.message
-        if (message.startsWith("§6Guild Name: ")) {
+        val message = event.cleanMessage
+        if (message.startsWith("Guild Name: ")) {
             inGuildMessage = true
             list.clear()
             return
         }
-        if (message.startsWith("§eOffline Members: ")) {
+        if (message.startsWith("Offline Members: ")) {
             inGuildMessage = false
             list.clear()
             return
         }
-        if (inGuildMessage && message == "§b§m-----------------------------------------------------") {
+        if (inGuildMessage && message == "-----------------------------------------------------") {
             inGuildMessage = false
             ProfileStorageData.playerSpecific?.guildMembers?.let {
                 it.clear()

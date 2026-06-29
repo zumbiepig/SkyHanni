@@ -10,7 +10,6 @@ import at.hannibal2.skyhanni.utils.HypixelCommands
 import at.hannibal2.skyhanni.utils.PlayerUtils
 import at.hannibal2.skyhanni.utils.RegexUtils.matches
 import at.hannibal2.skyhanni.utils.SkyBlockUtils
-import at.hannibal2.skyhanni.utils.StringUtils.cleanPlayerName
 import at.hannibal2.skyhanni.utils.repopatterns.RepoPattern
 
 @SkyHanniModule
@@ -35,7 +34,7 @@ object PartyOnBoop {
         val message = event.messageComponent.intoComponent()
         if (!boopPattern.matches(message)) return
 
-        val username = event.author.cleanPlayerName(displayName = true)
+        val username = event.cleanAuthor
         if (username == PlayerUtils.getName()) return
 
         ChatUtils.clickableChat(

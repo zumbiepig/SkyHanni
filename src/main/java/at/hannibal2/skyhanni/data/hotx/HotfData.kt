@@ -375,11 +375,11 @@ enum class HotfData(
         )
 
         /**
-         * WRAPPED-REGEX-TEST: " §7You have reset your §r§aHeart of the Forest§r§7! Your §r§aPerks §r§7and §r§aAbilities §r§7have been reset."
+         * WRAPPED-REGEX-TEST: " You have reset your Heart of the Forest! Your Perks and Abilities have been reset."
          */
         override val resetChatPattern by patternGroup.pattern(
             "reset.chat",
-            "\\s*§7You have reset your §r§aHeart of the Forest§r§7! Your §r§aPerks §r§7and §r§aAbilities §r§7have been reset\\.",
+            "\\s*You have reset your Heart of the Forest! Your Perks and Abilities have been reset\\.",
         )
 
         /**

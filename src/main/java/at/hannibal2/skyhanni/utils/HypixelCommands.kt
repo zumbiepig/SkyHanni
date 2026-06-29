@@ -165,7 +165,7 @@ object HypixelCommands {
     }
 
     fun partyInvite(player: String) {
-        send("party $player")
+        send("party invite $player")
     }
 
     fun allChat(message: String) {

@@ -43,7 +43,7 @@ object PartyChatCommands {
             { config.transferCommand },
             triggerableBySelf = false,
             executable = {
-                HypixelCommands.partyTransfer(it.authorName)
+                HypixelCommands.partyTransfer(it.cleanAuthor)
             },
         ),
         PartyChatCommand(
@@ -119,19 +119,20 @@ object PartyChatCommands {
 
     @HandleEvent
     fun onPartyCommand(event: PartyChatEvent.Allow) {
-        if (event.cleanMessage.firstOrNull() !in commandPrefixes) return
-        val commandLabel = event.cleanMessage.substring(1).substringBefore(' ')
+        val message = event.messageComponent.getText()
+        if (message.firstOrNull() !in commandPrefixes) return
+        val commandLabel = message.substring(1).substringBefore(' ')
         val command = indexedPartyChatCommands[commandLabel.lowercase()] ?: return
-        val name = event.authorName
+        val name = event.cleanAuthor
         if (name == PlayerUtils.getName() && (!command.triggerableBySelf || !config.selfTriggerCommands)) return
         if (!command.isEnabled()) return
         if (command.requiresPartyLead && PartyApi.partyLeader != PlayerUtils.getName()) return
         if (isBlockedUser(name)) {
             if (config.showIgnoredReminder) ChatUtils.clickableChat(
-                "§cIgnoring chat command from ${event.author}. " +
+                "§cIgnoring chat command from ${event.cleanAuthor}. " +
                     "Stop ignoring them using /shignore remove <player> or click here!",
-                onClick = { blacklistModify(event.author) },
-                "§eClick to ignore ${event.author}!",
+                onClick = { blacklistModify(event.cleanAuthor) },
+                "§eClick to ignore ${event.cleanAuthor}!",
             )
             return
         }

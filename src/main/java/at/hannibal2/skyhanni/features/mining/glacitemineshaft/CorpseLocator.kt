@@ -84,7 +84,6 @@ object CorpseLocator {
         closestCorpse.shared = true
     }
 
-
     @HandleEvent
     fun onWorldChange() {
         sharedWaypoints.clear()
@@ -104,17 +103,17 @@ object CorpseLocator {
 
     @HandleEvent
     fun onPartyChat(event: PartyChatEvent.Allow) {
-        handleChatEvent(event.author, event.message)
+        handleChatEvent(event.cleanAuthor, event.messageComponent.getText())
     }
 
     @HandleEvent
     fun onAllChat(event: PlayerAllChatEvent.Allow) {
-        handleChatEvent(event.author, event.message)
+        handleChatEvent(event.cleanAuthor, event.messageComponent.getText())
     }
 
     private fun handleChatEvent(author: String, message: String) {
         if (!isEnabled()) return
-        if (PlayerUtils.getName() in author) return
+        if (author != PlayerUtils.getName()) return
 
         mineshaftCoordsPattern.matchMatcher(message) {
             val location = toLorenzVec() ?: return

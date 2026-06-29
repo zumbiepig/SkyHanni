@@ -81,7 +81,7 @@ object PlayerChatManager {
      */
     private val privateMessagePattern by patternGroup.pattern(
         "privatemessage",
-        "^(?!From stash: )(?<direction>From|To) (?<rank>\\[[ዞ\\w+]+\\] )?(?<author>[^:]*): (?<message>.*)",
+        "^(?!From stash: )(?<direction>From|To) (?<author>.*?): (?<message>.*)",
     )
 
     /**
@@ -130,17 +130,16 @@ object PlayerChatManager {
             return
         }
         partyPattern.matchStyledMatcher(chatComponent) {
-            PartyChatEvent.Allow(groupOrThrow("author"), groupOrThrow("message"), event.chatComponent)
-                .postChat(event)
+            val author = groupOrThrow("author")
+            val message = groupOrThrow("message")
+            PartyChatEvent.Allow(author, message, event.chatComponent).postChat(event)
             return
         }
         guildPattern.matchStyledMatcher(chatComponent) {
-            GuildChatEvent.Allow(
-                groupOrThrow("author"),
-                groupOrThrow("message"),
-                group("guildRank"),
-                event.chatComponent,
-            ).postChat(event)
+            val author = groupOrThrow("author")
+            val message = groupOrThrow("message")
+            val guildRank = group("guildRank")
+            GuildChatEvent.Allow(author, message, guildRank, event.chatComponent).postChat(event)
             return
         }
         privateMessagePattern.matchStyledMatcher(chatComponent) {
@@ -167,10 +166,11 @@ object PlayerChatManager {
             return
         }
         globalPattern.matchStyledMatcher(chatComponent) {
+            // this method will post PlayerAllChatEvent if needed
             if (isGlobalChat(event)) return
         }
 
-        sendSystemMessage(event)
+        SystemMessageEvent.Allow(event.messageComponent, event.chatComponent).postChat(event)
     }
 
     @HandleEvent
@@ -183,17 +183,16 @@ object PlayerChatManager {
             return
         }
         partyPattern.matchStyledMatcher(chatComponent) {
-            PartyChatEvent.Modify(groupOrThrow("author"), groupOrThrow("message"), event.chatComponent)
-                .postChat(event)
+            val author = groupOrThrow("author")
+            val message = groupOrThrow("message")
+            PartyChatEvent.Modify(author, message, event.chatComponent).postChat(event)
             return
         }
         guildPattern.matchStyledMatcher(chatComponent) {
-            GuildChatEvent.Modify(
-                groupOrThrow("author"),
-                groupOrThrow("message"),
-                group("guildRank"),
-                event.chatComponent,
-            ).postChat(event)
+            val author = groupOrThrow("author")
+            val message = groupOrThrow("message")
+            val guildRank = group("guildRank")
+            GuildChatEvent.Modify(author, message, guildRank, event.chatComponent).postChat(event)
             return
         }
         privateMessagePattern.matchStyledMatcher(chatComponent) {
@@ -220,10 +219,11 @@ object PlayerChatManager {
             return
         }
         globalPattern.matchStyledMatcher(chatComponent) {
+            // this method will post PlayerAllChatEvent if needed
             if (isGlobalChat(event)) return
         }
 
-        sendSystemMessage(event)
+        SystemMessageEvent.Modify(event.messageComponent, event.chatComponent).postChat(event)
     }
 
     private fun ComponentMatcher.isGlobalChat(event: SkyHanniChatEvent.Allow): Boolean {
@@ -310,18 +310,14 @@ object PlayerChatManager {
         return true
     }
 
-    private fun sendSystemMessage(event: SkyHanniChatEvent.Allow) {
-        with(SystemMessageEvent.Allow(event.message, event.chatComponent)) {
-            post()
-            event.handleChat(blockedReason)
-        }
+    private fun SystemMessageEvent.Allow.postChat(event: SkyHanniChatEvent.Allow) {
+        post()
+        event.handleChat(blockedReason)
     }
 
-    private fun sendSystemMessage(event: SkyHanniChatEvent.Modify) {
-        with(SystemMessageEvent.Modify(event.message, event.chatComponent)) {
-            post()
-            event.handleChat(chatComponent)
-        }
+    private fun SystemMessageEvent.Modify.postChat(event: SkyHanniChatEvent.Modify) {
+        post()
+        event.handleChat(chatComponent)
     }
 
     private fun AbstractSourcedChatEvent.Allow.postChat(event: SkyHanniChatEvent.Allow) {

@@ -256,7 +256,7 @@ object ContributorManager {
         if (!config.contributorMentionTracker) return
         val msg = event.messageComponent.getText()
         if (!isContributorMentionMessage(msg)) return
-        val author = event.author
+        val author = event.cleanAuthor
         // contributorNames includes the current player
         if (author in contributorNames) return
         if (!contributorMentionersThisSession.add(author)) return

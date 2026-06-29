@@ -26,9 +26,8 @@ object PleadAchievement {
 
     @HandleEvent(onlyOnSkyblock = true)
     fun onChat(event: PlayerAllChatEvent.Allow) {
-        if (!event.author.contains(PlayerUtils.getName())) return
+        if (event.cleanAuthor != PlayerUtils.getName()) return
         if (!event.cleanMessage.contains("plead")) return
         AchievementManager.completeAchievement(PLEAD_ACHIEVEMENT)
-
     }
 }

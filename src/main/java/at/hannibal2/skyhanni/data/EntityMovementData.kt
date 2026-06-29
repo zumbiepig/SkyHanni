@@ -9,7 +9,7 @@ import at.hannibal2.skyhanni.events.entity.EntityMoveEvent
 import at.hannibal2.skyhanni.skyhannimodule.SkyHanniModule
 import at.hannibal2.skyhanni.utils.DelayedRun
 import at.hannibal2.skyhanni.utils.LorenzVec
-import at.hannibal2.skyhanni.utils.RegexUtils.matches
+import at.hannibal2.skyhanni.utils.RegexUtils.matchMatchers
 import at.hannibal2.skyhanni.utils.SimpleTimeMark
 import at.hannibal2.skyhanni.utils.compat.MinecraftCompat
 import at.hannibal2.skyhanni.utils.compat.deceased
@@ -24,13 +24,19 @@ import kotlin.time.Duration.Companion.seconds
 object EntityMovementData {
 
     /**
-     * REGEX-TEST: §7Sending a visit request...
-     * REGEX-TEST: §7Finding player...
-     * REGEX-TEST: §7Warping you to your SkyBlock island...
+     * REGEX-TEST: Warping...
+     * REGEX-TEST: Sending a visit request...
+     * REGEX-TEST: Finding player...
+     * REGEX-TEST: Warping you to your SkyBlock island...
+     * REGEX-TEST: Warping using transfer token...
      */
-    private val warpingPattern by RepoPattern.pattern(
-        "data.entity.warping",
-        "§7(?:Warping|Warping you to your SkyBlock island|Warping using transfer token|Finding player|Sending a visit request)\\.\\.\\.",
+    private val warpingPattern by RepoPattern.list(
+        "data.entity.warping.list",
+        "Warping\\.\\.\\.",
+        "Warping you to your SkyBlock island\\.\\.\\.",
+        "Warping using transfer token\\.\\.\\.",
+        "Finding player\\.\\.\\.",
+        "Sending a visit request\\.\\.\\.",
     )
 
     private var nextTeleport: OnNextTeleport? = null
@@ -108,9 +114,10 @@ object EntityMovementData {
 
     @HandleEvent(onlyOnSkyblock = true)
     fun onChat(event: SkyHanniChatEvent.Allow) {
-        if (!warpingPattern.matches(event.message)) return
-        DelayedRun.runNextTick {
-            SkyHanniWarpEvent.post()
+        warpingPattern.matchMatchers(event.cleanMessage) {
+            DelayedRun.runNextTick {
+                SkyHanniWarpEvent.post()
+            }
         }
     }
 
