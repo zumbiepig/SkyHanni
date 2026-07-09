@@ -40,19 +40,19 @@ object GetFromSackApi {
     private val patternGroup = RepoPattern.group("gfs.chat")
 
     /**
-     * REGEX-TEST: §aMoved §r§e10 Wheat§r§a from your Sacks to your inventory.
+     * REGEX-TEST: Moved 10 Wheat from your Sacks to your inventory.
      */
     private val fromSacksChatPattern by patternGroup.pattern(
         "from",
-        "§aMoved §r§e(?<amount>\\d+) (?<item>.+)§r§a from your Sacks to your inventory.",
+        "Moved (?<amount>\\d+) (?<item>.+) from your Sacks to your inventory.",
     )
 
     /**
-     * REGEX-TEST: §cYou have no Compost in your Sacks!
+     * REGEX-TEST: You have no Compost in your Sacks!
      */
     private val missingChatPattern by patternGroup.pattern(
         "missing",
-        "§cYou have no (?<item>.+) in your Sacks!",
+        "You have no (?<item>.+) in your Sacks!",
     )
 
     fun getFromSack(item: NeuInternalName, amount: Int) = getFromSack(item.makePrimitiveStack(amount))
@@ -192,7 +192,7 @@ object GetFromSackApi {
     fun onChat(event: SkyHanniChatEvent.Allow) {
         if (!config.bazaarGFS || SkyBlockUtils.noTradeMode) return
         val stack = lastItemStack ?: return
-        val message = event.message
+        val message = event.cleanMessage
         fromSacksChatPattern.matchMatcher(message) {
             val diff = stack.amount - group("amount").toInt()
             lastItemStack = null

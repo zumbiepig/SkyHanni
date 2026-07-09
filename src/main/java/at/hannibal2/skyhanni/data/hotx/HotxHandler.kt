@@ -192,7 +192,7 @@ abstract class HotxHandler<Data : HotxData<Reward>, Reward, RotPerkE>(val data: 
         )
     }
 
-    protected open val rotatingPerkPattern: Pattern by lazy { HotxPatterns.rotatingPerkPattern }
+    protected open val chatRotatingPerkPattern: Pattern by lazy { HotxPatterns.chatRotatingPerkPattern }
     protected abstract val rotatingPerks: List<RotPerkE>
     protected abstract val islandTypeTag: IslandTypeTag
     abstract var currentRotPerk: RotPerkE?
@@ -203,7 +203,7 @@ abstract class HotxHandler<Data : HotxData<Reward>, Reward, RotPerkE>(val data: 
     abstract fun extraChatHandling(event: SkyHanniChatEvent.Allow)
 
     open fun onChat(event: SkyHanniChatEvent.Allow) {
-        if (resetChatPattern.matches(event.message)) {
+        if (resetChatPattern.matches(event.cleanMessage)) {
             resetTree()
             return
         }
@@ -213,7 +213,7 @@ abstract class HotxHandler<Data : HotxData<Reward>, Reward, RotPerkE>(val data: 
     abstract fun tryBlock(event: SkyHanniChatEvent.Allow)
 
     fun tryReadRotatingPerkChat(event: SkyHanniChatEvent.Allow): Boolean? {
-        rotatingPerkPattern.matchMatcher(event.message) {
+        chatRotatingPerkPattern.matchMatcher(event.cleanMessage) {
             val perkString = group("perk")
             val foundPerk = rotatingPerks.firstNotNullOfOrNull { perk ->
                 if (!perk.chatPattern.matches(perkString)) return@firstNotNullOfOrNull null
@@ -240,7 +240,7 @@ abstract class HotxHandler<Data : HotxData<Reward>, Reward, RotPerkE>(val data: 
             return null
         }
         val nextLine = lore[index + 1]
-        val perkLore = HotxPatterns.rotatingPerkPattern.matchGroup(nextLine, "perk") ?: return null
+        val perkLore = HotxPatterns.itemRotatingPerkPattern.matchGroup(nextLine, "perk") ?: return null
         val perkEnum: RotPerkE? = rotatingPerks.firstNotNullOfOrNull { perk ->
             if (perk.itemPattern.matches(perkLore)) perk
             else null

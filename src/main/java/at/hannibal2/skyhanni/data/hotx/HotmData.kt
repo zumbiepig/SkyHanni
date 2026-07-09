@@ -500,7 +500,7 @@ enum class HotmData(
 
         override val resetChatPattern by patternGroup.pattern(
             "reset.chat",
-            "§aReset your §r§5Heart of the Mountain§r§a! Your Perks and Abilities have been reset\\.",
+            "Reset your Heart of the Mountain! Your Perks and Abilities have been reset\\.",
         )
 
         override val heartItemPattern by patternGroup.pattern(
@@ -530,7 +530,7 @@ enum class HotmData(
 
         private val mayhemChatPattern by patternGroup.pattern(
             "mayhem",
-            "§b§lMAYHEM! §r§7(?<perk>.*)",
+            "MAYHEM! (?<perk>.+)",
         )
 
         /**
@@ -651,13 +651,13 @@ enum class HotmData(
 
         override fun extraChatHandling(event: SkyHanniChatEvent.Allow) {
             DelayedRun.runNextTick {
-                mayhemChatPattern.matchMatcher(event.message) {
+                mayhemChatPattern.matchMatcher(event.cleanMessage) {
                     val perk = group("perk")
                     HotmApi.mineshaftMayhem = MayhemPerk.entries.firstOrNull { it.chatPattern.matches(perk) } ?: run {
                         ErrorManager.logErrorStateWithData(
                             "Could not read the mayhem effect from chat",
                             "no chatPattern matched",
-                            "chat" to event.message,
+                            "chat" to event.cleanMessage,
                             "perk" to perk,
                         )
                         null

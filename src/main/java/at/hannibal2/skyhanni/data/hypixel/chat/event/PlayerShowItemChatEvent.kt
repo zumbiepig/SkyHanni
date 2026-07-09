@@ -15,21 +15,21 @@ object PlayerShowItemChatEvent {
      *
      * @param levelComponent The SkyBlock level.
      * @param action The text indicating the action performed with the item.
-     * @param author The message author's name.
+     * @param authorComponent The message author's name.
      * @param item The chat component representing the shown item.
-     * @param message The content of the actual message.
+     * @param messageComponent The content of the actual message.
      * @param chatComponent The entire original chat component.
      * @param blockedReason The reason if the message should be blocked. null means not blocked.
      */
     class Allow(
         val levelComponent: ComponentSpan?,
         val action: ComponentSpan,
-        author: ComponentSpan,
+        authorComponent: ComponentSpan,
         val item: ComponentSpan,
-        message: ComponentSpan,
+        messageComponent: ComponentSpan,
         chatComponent: Component,
         blockedReason: String? = null,
-    ) : AbstractSourcedChatEvent.Allow(author, message, chatComponent, blockedReason)
+    ) : AbstractSourcedChatEvent.Allow(authorComponent, messageComponent, chatComponent, blockedReason)
 
     /**
      * Fired during the modification phase of the chat processing pipeline.
@@ -38,17 +38,17 @@ object PlayerShowItemChatEvent {
      *
      * @param levelComponent The SkyBlock level.
      * @param action The text indicating the action performed with the item.
-     * @param author The message author's name.
+     * @param authorComponent The message author's name.
      * @param item The chat component representing the shown item.
-     * @param message The content of the actual message.
+     * @param messageComponent The content of the actual message.
      * @param chatComponent The entire original chat component.
      */
     class Modify(
         val levelComponent: ComponentSpan?,
         val action: ComponentSpan,
-        author: ComponentSpan,
+        authorComponent: ComponentSpan,
         val item: ComponentSpan,
-        message: ComponentSpan,
+        messageComponent: ComponentSpan,
         chatComponent: Component,
-    ) : AbstractSourcedChatEvent.Modify(author, message, chatComponent)
+    ) : AbstractSourcedChatEvent.Modify(authorComponent, messageComponent, chatComponent)
 }

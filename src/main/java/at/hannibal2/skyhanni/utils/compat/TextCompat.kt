@@ -1,5 +1,6 @@
 package at.hannibal2.skyhanni.utils.compat
 
+//? if >= 26.1 {
 import at.hannibal2.skyhanni.data.ChatManager
 import at.hannibal2.skyhanni.test.command.ErrorManager
 import at.hannibal2.skyhanni.utils.ChatUtils.skyhanniCreated
@@ -9,9 +10,15 @@ import at.hannibal2.skyhanni.utils.LorenzColor
 import at.hannibal2.skyhanni.utils.SafeItemStack
 import at.hannibal2.skyhanni.utils.chat.TextHelper.asComponent
 import at.hannibal2.skyhanni.utils.collection.TimeLimitedCache
+import ca.weblite.objc.RuntimeUtils.str
+import com.google.gson.JsonElement
+import com.google.gson.JsonObject
+import com.google.gson.JsonParser
+import com.google.gson.JsonPrimitive
 import net.minecraft.ChatFormatting
-import net.minecraft.client.multiplayer.chat.GuiMessageTag
 import net.minecraft.client.Minecraft
+import net.minecraft.client.multiplayer.chat.GuiMessageSource
+import net.minecraft.client.multiplayer.chat.GuiMessageTag
 import net.minecraft.network.chat.ClickEvent
 import net.minecraft.network.chat.Component
 import net.minecraft.network.chat.HoverEvent
@@ -22,6 +29,8 @@ import net.minecraft.network.chat.TextColor
 import net.minecraft.network.chat.contents.PlainTextContents
 import net.minecraft.network.chat.contents.TranslatableContents
 import net.minecraft.resources.Identifier
+import net.minecraft.util.StringDecomposer
+import net.minecraft.world.item.ItemStackTemplate
 import java.net.URI
 import java.util.Optional
 import kotlin.concurrent.atomics.AtomicBoolean
@@ -29,15 +38,13 @@ import kotlin.jvm.optionals.getOrNull
 import kotlin.math.abs
 import kotlin.time.Duration.Companion.minutes
 
-//? if >= 26.1 {
-import net.minecraft.world.item.ItemStackTemplate
-import net.minecraft.client.multiplayer.chat.GuiMessageSource
 //?}
 
 // TODO do the same thing here as in EntityCompat, no more functions/members that are classless
 
 private val unformattedTextCache = TimeLimitedCache<Component, String>(3.minutes)
 private val formattedTextCache = TimeLimitedCache<TextCacheKey, String>(3.minutes)
+private val normalizedComponentCache = TimeLimitedCache<Component, Component>(3.minutes)
 
 private enum class FormattedTextSettings {
     DEFAULT,
@@ -121,6 +128,37 @@ private fun Component?.computeFormattedTextCompat(noExtraResets: Boolean, leadin
         }
     }
     return sb.removeSuffix("§r").removePrefix("§r").toString()
+}
+
+/**
+ * Convert any legacy formatting codes (§) left in the component to modern component formatting, while keeping existing formatting
+ */
+fun Component.normalizeComponent(): Component {
+    return normalizedComponentCache.getOrPut(this) {
+        computeNormalizedComponent()
+    }
+}
+
+fun Component.computeNormalizedComponent(): Component {
+    val result = Component.empty()
+    val sb = StringBuilder(50)
+    var currentStyle = Style.EMPTY
+
+    StringDecomposer.iterateFormatted(this, Style.EMPTY) { _, style, codePoint ->
+        if (style != currentStyle) {
+            if (sb.isNotEmpty()) {
+                result.append(Component.literal(sb.toString()).withStyle(currentStyle))
+                sb.clear()
+            }
+            currentStyle = style
+        }
+        sb.appendCodePoint(codePoint)
+        true
+    }
+
+    if (sb.isNotEmpty()) result.append(Component.literal(sb.toString()).withStyle(currentStyle))
+
+    return result
 }
 
 private val textColorLUT = ChatFormatting.entries
@@ -345,6 +383,13 @@ fun Component.convertToJsonString(): String {
         com.mojang.serialization.JsonOps.INSTANCE,
         this,
     ).orThrow.toString()
+}
+
+fun String.convertFromJsonString(): Component {
+    return net.minecraft.network.chat.ComponentSerialization.CODEC.parse(
+        com.mojang.serialization.JsonOps.INSTANCE,
+        JsonParser.parseString(this),
+    ).orThrow
 }
 
 fun Component.append(newText: Component): MutableComponent {

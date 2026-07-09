@@ -255,9 +255,9 @@ object ContributorManager {
     fun onPlayerAllChat(event: PlayerAllChatEvent.Allow) {
         if (!isSelfContributor()) return
         if (!config.contributorMentionTracker) return
-        val msg = event.messageComponent.getText()
+        val msg = event.cleanMessage
         if (!isContributorMentionMessage(msg)) return
-        val author = event.author
+        val author = event.cleanAuthor
         // contributorNames includes the current player
         if (author in contributorNames) return
         if (!contributorMentionersThisSession.add(author)) return

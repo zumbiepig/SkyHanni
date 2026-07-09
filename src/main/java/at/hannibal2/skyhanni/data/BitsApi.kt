@@ -79,30 +79,29 @@ object BitsApi {
     private val bitsChatGroup = bitsDataGroup.group("chat")
 
     /**
-     * REGEX-TEST: §eYou gained §317,664 Bits Available §ecompounded from all your §epreviously eaten §6cookies§e! Click here to open §6cookie menu§e!
+     * REGEX-TEST: You gained 17,664 Bits Available compounded from all your previously eaten cookies! Click here to open cookie menu!
      */
-    @Suppress("MaxLineLength")
     private val bitsFromFameRankUpChatPattern by bitsChatGroup.pattern(
         "rankup.bits",
-        "§eYou gained §3(?<amount>.*) Bits Available §ecompounded from all your §epreviously eaten §6cookies§e! Click here to open §6cookie menu§e!",
+        "You gained (?<amount>.+) Bits Available compounded from all your previously eaten cookies! Click here to open cookie menu!",
     )
 
     /**
-     * REGEX-TEST: §6  §6§lFAME RANK UP §eStatesperson
+     * WRAPPED-REGEX-TEST: "  FAME RANK UP Statesperson"
      */
     private val fameRankUpPattern by bitsChatGroup.pattern(
         "rankup.rank",
-        "[§\\w\\s]+FAME RANK UP (?:§.)+(?<rank>.*)",
+        " +FAME RANK UP (?<rank>.+)",
     )
 
     /**
-     * REGEX-TEST: §eYou consumed a §6Booster Cookie§e! §dYummy!
-     * REGEX-TEST: §eYou consumed a §6Booster Cookie§e!
-     * REGEX-TEST: §eYou consumed a §6Booster Cookie§e! §dDivine!
+     * REGEX-TEST: You consumed a Booster Cookie! Yummy!
+     * REGEX-TEST: You consumed a Booster Cookie!
+     * REGEX-TEST: You consumed a Booster Cookie! Divine!
      */
     private val boosterCookieAte by bitsChatGroup.pattern(
         "boostercookieate",
-        "§eYou consumed a §6Booster Cookie§e!.*",
+        "You consumed a Booster Cookie!(?: \\w+!)?",
     )
 
     // GUI patterns
@@ -241,7 +240,7 @@ object BitsApi {
     @HandleEvent
     fun onChat(event: SkyHanniChatEvent.Allow) {
         if (!isEnabled()) return
-        val message = event.message.trimWhiteSpace().removeResets()
+        val message = event.cleanMessage
 
         bitsFromFameRankUpChatPattern.matchMatcher(message) {
             val amount = group("amount").formatInt()

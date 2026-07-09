@@ -33,43 +33,51 @@ object FriendApi {
     private val patternGroup = RepoPattern.group("data.friends")
 
     /**
-     * REGEX-TEST: §r§eYou removed §r§b[MVP§r§d+§r§b] Throwpo§r§e from your friends list!§r§9§m
+     * REGEX-TEST: You removed [MVP+] Throwpo from your friends list!
      */
     private val removedFriendPattern by patternGroup.pattern(
         "remove",
-        ".*\n§r§eYou removed §r(?<name>.*)§e from your friends list!§r§9§m\n.*",
+        "-*\n?You removed (?<name>.+) from your friends list!\n?-*",
     )
 
     /**
-     * REGEX-TEST: §aYou are now friends with §r§b[MVP§r§d+§r§b] Throwpo
+     * REGEX-TEST: You are now friends with [MVP+] Throwpo
      */
     private val addedFriendPattern by patternGroup.pattern(
         "add",
-        "§aYou are now friends with (?<name>.*)",
+        "You are now friends with (?<name>.+)",
     )
 
     /**
-     * REGEX-TEST: §r§b[MVP§r§c+§r§b] hannibal2§r§e is no longer a best friend!§r§9§m
+     * REGEX-TEST: [MVP+] hannibal2 is no longer a best friend!
      */
     private val noBestFriendPattern by patternGroup.pattern(
         "removebest",
-        ".*\n§r(?<name>.*)§e is no longer a best friend!§r§9§m\n.*",
+        "-*\n?(?<name>.+) is no longer a best friend!\n?-*",
     )
 
     /**
-     * REGEX-TEST: §r§b[MVP§r§c+§r§b] hannibal2§r§a is now a best friend!§r§9§m
+     * REGEX-TEST: [MVP+] hannibal2 is now a best friend!
      */
     private val bestFriendPattern by patternGroup.pattern(
         "addbest",
-        ".*\n(?<name>.*)§a is now a best friend!§r§9§m\n.*",
+        "-*\n?(?<name>.+) is now a best friend!\n?-*",
     )
 
     /**
-     * REGEX-TEST: §eClick here to view §bThrowpo§e's profile
+     * REGEX-TEST: Friends (Page 1 of 10)
+     */
+    private val friendListPattern by patternGroup.pattern(
+        "friendlist",
+        "-*\n.*Friends \\(Page \\d+ of \\d+\\).*\n-*",
+    )
+
+    /**
+     * REGEX-TEST: Click here to view Throwpo's profile
      */
     private val rawNamePattern by patternGroup.pattern(
         "rawname",
-        "\n§eClick here to view §.(?<name>.*)§e's profile",
+        "\n§eClick here to view §.(?<name>.+)§e's profile",
     )
 
     /**
@@ -77,7 +85,7 @@ object FriendApi {
      */
     private val readFriendListPattern by patternGroup.pattern(
         "readfriends",
-        "/viewprofile (?<uuid>.*)",
+        "/viewprofile (?<uuid>.+)",
     )
 
     /**
@@ -85,15 +93,15 @@ object FriendApi {
      */
     private val friendRequestExpiredPattern by patternGroup.pattern(
         "friend-request-expired",
-        "The friend request to (?<name>.*) has expired.",
+        "The friend request to (?<name>.+) has expired.",
     )
 
     /**
-     * REGEX-TEST: You sent a friend request to enbylae!
+     * REGEX-TEST: You sent a friend request to enbylae! They have 5 minutes to accept it!
      */
     private val friendRequestSentPattern by patternGroup.pattern(
         "friend-request-sent",
-        "You sent a friend request to (?<name>.*)!",
+        "You sent a friend request to (?<name>.+)! They have 5 minutes to accept it!",
     )
 
     private val pendingRequests = mutableListOf<String>()
@@ -124,35 +132,44 @@ object FriendApi {
 
     @HandleEvent
     fun onChat(event: SkyHanniChatEvent.Allow) {
-        readFriendsList(event)
+        friendListPattern.matchMatcher(event.cleanMessage) {
+            readFriendsList(event)
+            return
+        }
 
-        removedFriendPattern.matchMatcher(event.message) {
+        removedFriendPattern.matchMatcher(event.cleanMessage) {
             val name = group("name").cleanPlayerName()
             removedFriend(name)
+            return
         }
-        addedFriendPattern.matchMatcher(event.message) {
+        addedFriendPattern.matchMatcher(event.cleanMessage) {
             val name = group("name").cleanPlayerName()
             removePendingRequest(name)
             addFriend(name)
+            return
         }
 
-        noBestFriendPattern.matchMatcher(event.message) {
+        noBestFriendPattern.matchMatcher(event.cleanMessage) {
             val name = group("name").cleanPlayerName()
             setBestFriend(name, false)
+            return
         }
-        bestFriendPattern.matchMatcher(event.message) {
+        bestFriendPattern.matchMatcher(event.cleanMessage) {
             val name = group("name").cleanPlayerName()
             setBestFriend(name, true)
+            return
         }
 
         friendRequestExpiredPattern.matchMatcher(event.cleanMessage) {
             val name = group("name")
             removePendingRequest(name)
             FriendRequestExpiredEvent(name).post()
+            return
         }
         friendRequestSentPattern.matchMatcher(event.cleanMessage) {
             val name = group("name")
             addPendingRequest(name)
+            return
         }
     }
 
@@ -176,12 +193,9 @@ object FriendApi {
     }
 
     private fun readFriendsList(event: SkyHanniChatEvent.Allow) {
-        if (!event.message.contains("Friends")) return
-
         for (sibling in event.chatComponent.siblings) {
             val chatStyle = sibling.style.takeUnlessEmpty() ?: continue
             val value = sibling.command ?: continue
-            if (!value.startsWith("/viewprofile")) continue
 
             val uuid = readFriendListPattern.matchMatcher(value) {
                 group("uuid")?.let {
@@ -194,7 +208,7 @@ object FriendApi {
                             "value" to value,
                             "chatStyle" to chatStyle,
                             "event.chatComponent" to event.chatComponent,
-                            "event.message" to event.message,
+                            "event.cleanMessage" to event.cleanMessage,
                         )
                         return
                     }

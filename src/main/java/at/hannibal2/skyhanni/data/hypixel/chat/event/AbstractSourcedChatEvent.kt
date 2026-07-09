@@ -2,6 +2,8 @@ package at.hannibal2.skyhanni.data.hypixel.chat.event
 
 import at.hannibal2.skyhanni.events.chat.AbstractChatEvent
 import at.hannibal2.skyhanni.utils.ComponentSpan
+import at.hannibal2.skyhanni.utils.StringUtils.cleanPlayerName
+import at.hannibal2.skyhanni.utils.StringUtils.removeColor
 import net.minecraft.network.chat.Component
 
 /**
@@ -20,15 +22,18 @@ object AbstractSourcedChatEvent {
      * @param chatComponent The entire original chat component.
      * @param blockedReason The reason if the message should be blocked. null means not blocked.
      */
-    open class Allow(
-        val authorComponent: ComponentSpan,
+    abstract class Allow(
+        open val authorComponent: ComponentSpan,
         messageComponent: ComponentSpan,
         chatComponent: Component,
         blockedReason: String? = null,
     ) : AbstractChatEvent.Allow(messageComponent, chatComponent, blockedReason) {
 
         /** The plain text name of the author. */
-        val author = authorComponent.getText()
+        open val cleanAuthor: String = authorComponent.getText().cleanPlayerName()
+
+        /** The plain text message without any color codes. */
+        override val cleanMessage: String = messageComponent.getText().removeColor()
     }
 
     /**
@@ -40,13 +45,13 @@ object AbstractSourcedChatEvent {
      * @param messageComponent The content of the actual message.
      * @param chatComponent The entire original chat component.
      */
-    open class Modify(
-        val authorComponent: ComponentSpan,
+    abstract class Modify(
+        open val authorComponent: ComponentSpan,
         messageComponent: ComponentSpan,
         chatComponent: Component,
     ) : AbstractChatEvent.Modify(messageComponent, chatComponent) {
 
         /** The plain text name of the author. */
-        val author = authorComponent.getText()
+        open val cleanAuthor: String = authorComponent.getText().cleanPlayerName()
     }
 }

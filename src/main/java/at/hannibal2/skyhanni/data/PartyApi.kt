@@ -8,15 +8,13 @@ import at.hannibal2.skyhanni.events.DebugDataCollectEvent
 import at.hannibal2.skyhanni.events.chat.SkyHanniChatEvent
 import at.hannibal2.skyhanni.skyhannimodule.SkyHanniModule
 import at.hannibal2.skyhanni.utils.ChatUtils
-import at.hannibal2.skyhanni.utils.OSUtils
 import at.hannibal2.skyhanni.utils.PlayerUtils
 import at.hannibal2.skyhanni.utils.RegexUtils.matchMatcher
+import at.hannibal2.skyhanni.utils.RegexUtils.matchMatchers
 import at.hannibal2.skyhanni.utils.StringUtils.cleanPlayerName
 import at.hannibal2.skyhanni.utils.StringUtils.removeColor
-import at.hannibal2.skyhanni.utils.StringUtils.removeResets
 import at.hannibal2.skyhanni.utils.StringUtils.trimWhiteSpace
 import at.hannibal2.skyhanni.utils.repopatterns.RepoPattern
-import kotlin.random.Random
 
 @SkyHanniModule
 object PartyApi {
@@ -24,59 +22,59 @@ object PartyApi {
     private val patternGroup = RepoPattern.group("data.party")
 
     /**
-     * REGEX-TEST: §eYou have joined §b[MVP§d+§b] Throwpo's §eparty!
+     * REGEX-TEST: You have joined [MVP+] Throwpo's party!
      */
     private val youJoinedPartyPattern by patternGroup.pattern(
         "you.joined",
-        "§eYou have joined (?<name>.*)'s? §eparty!",
+        "You have joined (?<name>.+)'s? party!",
     )
 
     /**
-     * REGEX-TEST: §b[MVP§d+§b] Throwpo §ejoined the party.
+     * REGEX-TEST: [MVP+] Throwpo joined the party.
      */
     private val othersJoinedPartyPattern by patternGroup.pattern(
         "others.joined",
-        "(?<name>.*) §ejoined the party\\.",
+        "(?<name>.+) joined the party\\.",
     )
 
     /**
-     * REGEX-TEST: §eYou'll be partying with: §a[VIP] FungalBeatle550
+     * REGEX-TEST: You'll be partying with: [VIP] FungalBeatle550
      */
     private val othersInThePartyPattern by patternGroup.pattern(
         "others.inparty",
-        "§eYou'll be partying with: (?<names>.*)",
+        "You'll be partying with: (?<names>.+)",
     )
 
     /**
-     * REGEX-TEST: §7246sweets §ehas left the party.
+     * REGEX-TEST: 246sweets has left the party.
      */
     private val otherLeftPattern by patternGroup.pattern(
         "others.left",
-        "(?<name>.*) §ehas left the party\\.",
+        "(?<name>.+) has left the party\\.",
     )
 
     /**
-     * REGEX-TEST: §7riblets §ehas been removed from the party.
+     * REGEX-TEST: riblets has been removed from the party.
      */
     private val otherKickedPattern by patternGroup.pattern(
         "others.kicked",
-        "(?<name>.*) §ehas been removed from the party\\.",
+        "(?<name>.+) has been removed from the party\\.",
     )
 
     /**
-     * REGEX-TEST: §eKicked §b[MVP§d+§b] Throwpo§e because they were offline.
+     * REGEX-TEST: Kicked [MVP+] Throwpo because they were offline.
      */
     private val otherOfflineKickedPattern by patternGroup.pattern(
         "others.offline",
-        "§eKicked (?<name>.*) because they were offline\\.",
+        "Kicked (?<name>.+) because they were offline\\.",
     )
 
     /**
-     * REGEX-TEST: §b[MVP§d+§b] Throwpo §ewas removed from your party because they disconnected.
+     * REGEX-TEST: [MVP+] Throwpo was removed from your party because they disconnected.
      */
     private val otherDisconnectedPattern by patternGroup.pattern(
         "others.disconnect",
-        "(?<name>.*) §ewas removed from your party because they disconnected\\.",
+        "(?<name>.+) was removed from your party because they disconnected\\.",
     )
 
     /**
@@ -84,7 +82,7 @@ object PartyApi {
      */
     private val transferOnLeavePattern by patternGroup.pattern(
         "others.transfer.leave",
-        "The party was transferred to (?<newowner>.*) because (?<name>.*) left",
+        "The party was transferred to (?<newowner>.+) because (?<name>.+) left",
     )
 
     /**
@@ -92,31 +90,49 @@ object PartyApi {
      */
     val transferVoluntaryPattern by patternGroup.pattern(
         "others.transfer.voluntary",
-        "The party was transferred to (?<newowner>.*) by (?<name>.*)",
+        "The party was transferred to (?<newowner>.+) by (?<name>.+)",
     )
 
     /**
-     * REGEX-TEST: §b[MVP§d+§b] Throwpo §ehas disbanded the party!
+     * REGEX-TEST: [MVP+] Throwpo has disbanded the party!
      */
     private val disbandedPattern by patternGroup.pattern(
         "others.disband",
-        ".* §ehas disbanded the party!",
+        ".+ has disbanded the party!",
     )
 
     /**
-     * REGEX-TEST: §eYou have been kicked from the party by §b[MVP§d+§b] Throwpo §e
+     * REGEX-TEST: You have been kicked from the party by [MVP+] Throwpo
      */
     private val kickedPattern by patternGroup.pattern(
         "you.kicked",
-        "§eYou have been kicked from the party by .* §e",
+        "You have been kicked from the party by .+",
     )
 
     /**
-     * REGEX-TEST: §6Party Members (2)
+     * REGEX-TEST: You left the party.
+     * REGEX-TEST: The party was disbanded because all invites expired and the party was empty.
+     * REGEX-TEST: You are not currently in a party.
+     * REGEX-TEST: You are not in a party.
+     * REGEX-TEST: The party was disbanded because the party leader disconnected.
+     * REGEX-TEST: You are not in a party and were moved to the ALL channel.
+     */
+    private val leftPattern by patternGroup.list(
+        "you.left",
+        "You left the party\\.",
+        "The party was disbanded because all invites expired and the party was empty\\.",
+        "You are not currently in a party\\.",
+        "You are not in a party\\.",
+        "The party was disbanded because the party leader disconnected\\.",
+        "You are not in a party and were moved to the ALL channel.",
+    )
+
+    /**
+     * REGEX-TEST: Party Members (2)
      */
     private val partyMembersStartPattern by patternGroup.pattern(
         "members.start",
-        "§6Party Members \\(\\d+\\)",
+        "Party Members \\(\\d+\\)",
     )
 
     /**
@@ -125,19 +141,23 @@ object PartyApi {
      */
     private val partyMemberListPattern by patternGroup.pattern(
         "members.list.withkind",
-        "Party (?<kind>Leader|Moderators|Members): (?<names>.*)",
-    )
-    private val kuudraFinderJoinPattern by patternGroup.pattern(
-        "kuudrafinder.join",
-        "§dParty Finder §f> (?<name>.*?) §ejoined the group! \\(§[a-fA-F0-9]+Combat Level \\d+§e\\)",
+        "Party (?<kind>Leader|Moderators|Members): (?<names>.+)",
     )
 
     /**
-     * REGEX-TEST: §dParty Finder §f> §bGhostsTM §ejoined the dungeon group! (§bArcher Level 9§e)
+     * REGEX-TEST: Party Finder > GhostsTM joined the group! (Combat Level 60)
+     */
+    private val kuudraFinderJoinPattern by patternGroup.pattern(
+        "kuudrafinder.join",
+        "Party Finder > (?<name>.+) joined the group! \\(Combat Level \\d+\\)",
+    )
+
+    /**
+     * REGEX-TEST: Party Finder > GhostsTM joined the dungeon group! (Archer Level 9)
      */
     private val dungeonFinderJoinPattern by patternGroup.pattern(
         "dungeonfinder.join",
-        "§dParty Finder §f> (?<name>.*?) §ejoined the dungeon group! \\(§[a-fA-F0-9].* Level \\d+§[a-fA-F0-9]\\)",
+        "Party Finder > (?<name>.+) joined the dungeon group! \\((?:Healer|Mage|Berserk|Archer|Tank) Level \\d+\\)",
     )
 
     val partyMembers = mutableListOf<String>()
@@ -161,28 +181,24 @@ object PartyApi {
         if (partyLeader == PlayerUtils.getName()) {
             ChatUtils.chat("§aYou are leader")
         }
-
-        if (Random.nextDouble() < 0.1) {
-            OSUtils.openBrowser("https://www.youtube.com/watch?v=iANP7ib7CPA")
-            ChatUtils.hoverableChat("§7Are You Ready To Party?", listOf("§b~Spongebob"), prefix = false)
-        }
     }
 
     @HandleEvent
     fun onPartyChat(event: PartyChatEvent.Allow) {
-        val name = event.author.cleanPlayerName()
+        val name = event.cleanAuthor
         addPlayer(name)
     }
 
     @HandleEvent
     fun onChat(event: SkyHanniChatEvent.Allow) {
-        val message = event.message.trimWhiteSpace().removeResets()
+        val message = event.cleanMessage.trimWhiteSpace()
 
         // new member joined
         youJoinedPartyPattern.matchMatcher(message) {
             val name = group("name").cleanPlayerName()
             partyLeader = name
             addPlayer(name)
+            return
         }
         othersJoinedPartyPattern.matchMatcher(message) {
             val name = group("name").cleanPlayerName()
@@ -190,70 +206,79 @@ object PartyApi {
                 partyLeader = PlayerUtils.getName()
             }
             addPlayer(name)
+            return
         }
         othersInThePartyPattern.matchMatcher(message) {
             for (name in group("names").split(", ")) {
                 addPlayer(name.cleanPlayerName())
             }
+            return
         }
         kuudraFinderJoinPattern.matchMatcher(message) {
             val name = group("name").cleanPlayerName()
             addPlayer(name)
+            return
         }
         dungeonFinderJoinPattern.matchMatcher(message) {
             val name = group("name").cleanPlayerName()
             addPlayer(name)
+            return
         }
 
         // one member got removed
         otherLeftPattern.matchMatcher(message) {
             val name = group("name").cleanPlayerName()
             removeWithLeader(name)
+            return
         }
         otherKickedPattern.matchMatcher(message) {
             val name = group("name").cleanPlayerName()
             removeWithLeader(name)
+            return
         }
         otherOfflineKickedPattern.matchMatcher(message) {
             val name = group("name").cleanPlayerName()
             removeWithLeader(name)
+            return
         }
         otherDisconnectedPattern.matchMatcher(message) {
             val name = group("name").cleanPlayerName()
             partyMembers.remove(name)
+            return
         }
         transferOnLeavePattern.matchMatcher(message.removeColor()) {
             val name = group("name").cleanPlayerName()
             partyLeader = group("newowner").cleanPlayerName()
             partyMembers.remove(name)
+            return
         }
         transferVoluntaryPattern.matchMatcher(message.removeColor()) {
             partyLeader = group("newowner").cleanPlayerName()
             prevPartyLeader = group("name").cleanPlayerName()
+            return
         }
 
         // party disbanded
         disbandedPattern.matchMatcher(message) {
             partyLeft()
+            return
         }
         kickedPattern.matchMatcher(message) {
             partyLeft()
+            return
         }
-        if (message == "§eYou left the party." ||
-            message == "§cThe party was disbanded because all invites expired and the party was empty." ||
-            message == "§cYou are not currently in a party." ||
-            message == "§cYou are not in a party." ||
-            message == "§cThe party was disbanded because the party leader disconnected."
-        ) {
+        leftPattern.matchMatchers(message) {
             partyLeft()
+            return
         }
 
         // party list
-        partyMembersStartPattern.matchMatcher(message.removeResets()) {
+        partyMembersStartPattern.matchMatcher(message) {
             partyMembers.clear()
+            return
         }
 
-        partyMemberListPattern.matchMatcher(message.removeColor()) {
+        partyMemberListPattern.matchMatcher(message) {
             val kind = group("kind")
             val isPartyLeader = kind == "Leader"
             for (name in group("names").split(" ● ")) {
@@ -263,6 +288,7 @@ object PartyApi {
                     partyLeader = playerName
                 }
             }
+            return
         }
     }
 
@@ -314,5 +340,4 @@ object PartyApi {
             }
         }
     }
-
 }

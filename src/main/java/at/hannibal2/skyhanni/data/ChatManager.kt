@@ -1,5 +1,6 @@
 package at.hannibal2.skyhanni.data
 
+//? if >= 26.1 {
 import at.hannibal2.skyhanni.SkyHanniMod
 import at.hannibal2.skyhanni.api.event.HandleEvent
 import at.hannibal2.skyhanni.config.commands.CommandCategory
@@ -12,6 +13,7 @@ import at.hannibal2.skyhanni.features.chat.ChatHistoryGui
 import at.hannibal2.skyhanni.skyhannimodule.SkyHanniModule
 import at.hannibal2.skyhanni.test.command.ErrorManager
 import at.hannibal2.skyhanni.utils.ChatUtils
+import at.hannibal2.skyhanni.utils.ComponentMatcherUtils.intoSpan
 import at.hannibal2.skyhanni.utils.DelayedRun
 import at.hannibal2.skyhanni.utils.IdentityCharacteristics
 import at.hannibal2.skyhanni.utils.ReflectionUtils.getClassInstance
@@ -21,21 +23,19 @@ import at.hannibal2.skyhanni.utils.StringUtils.stripHypixelMessage
 import at.hannibal2.skyhanni.utils.chat.TextHelper.asComponent
 import at.hannibal2.skyhanni.utils.chat.TextHelper.send
 import at.hannibal2.skyhanni.utils.collection.CollectionUtils
-import at.hannibal2.skyhanni.utils.compat.append
 import at.hannibal2.skyhanni.utils.compat.formattedTextCompat
 import at.hannibal2.skyhanni.utils.system.PlatformUtils.getModInstance
 import net.minecraft.ChatFormatting
-import net.minecraft.client.multiplayer.chat.GuiMessage
-import net.minecraft.client.multiplayer.chat.GuiMessageTag
 import net.minecraft.client.Minecraft
+import net.minecraft.client.multiplayer.chat.GuiMessage
+import net.minecraft.client.multiplayer.chat.GuiMessageSource
+import net.minecraft.client.multiplayer.chat.GuiMessageTag
 import net.minecraft.network.chat.Component
 import net.minecraft.network.protocol.Packet
 import net.minecraft.network.protocol.game.ServerboundChatCommandPacket
 import net.minecraft.network.protocol.game.ServerboundChatPacket
 import kotlin.math.floor
 
-//? if >= 26.1 {
-import net.minecraft.client.multiplayer.chat.GuiMessageSource
 //?} else
 //import at.hannibal2.skyhanni.mixins.hooks.MessageStore.Companion.parent
 
@@ -163,7 +163,7 @@ object ChatManager {
         var cancelled = false
 
         val key = IdentityCharacteristics(original)
-        val chatEvent = SkyHanniChatEvent.Allow(message, original)
+        val chatEvent = SkyHanniChatEvent.Allow(original.intoSpan(), original)
         chatEvent.post()
 
         val blockReason = chatEvent.blockedReason.orEmpty().uppercase()
@@ -194,7 +194,7 @@ object ChatManager {
         val message = original.formattedTextCompat().stripHypixelMessage()
 
         val key = IdentityCharacteristics(original)
-        val chatEvent = SkyHanniChatEvent.Modify(message, original)
+        val chatEvent = SkyHanniChatEvent.Modify(original.intoSpan(), original)
         chatEvent.post()
 
         val modifiedComponent = chatEvent.chatComponent

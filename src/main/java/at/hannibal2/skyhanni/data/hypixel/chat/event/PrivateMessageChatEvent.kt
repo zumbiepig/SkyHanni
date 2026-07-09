@@ -15,18 +15,18 @@ object PrivateMessageChatEvent {
      * Cannot be used to edit or modify the message in any way. For that, see [Modify].
      *
      * @param direction Indicates whether the message is incoming or outgoing.
-     * @param author The message author's name or the recipient's name.
-     * @param message The content of the actual message.
+     * @param authorComponent The message author's name or the recipient's name.
+     * @param messageComponent The content of the actual message.
      * @param chatComponent The entire original chat component.
      * @param blockedReason The reason if the message should be blocked. null means not blocked.
      */
     class Allow(
         val direction: Direction,
-        author: ComponentSpan,
-        message: ComponentSpan,
+        authorComponent: ComponentSpan,
+        messageComponent: ComponentSpan,
         chatComponent: Component,
         blockedReason: String? = null,
-    ) : AbstractSourcedChatEvent.Allow(author, message, chatComponent, blockedReason)
+    ) : AbstractSourcedChatEvent.Allow(authorComponent, messageComponent, chatComponent, blockedReason)
 
     /**
      * Fired during the modification phase of the chat processing pipeline.
@@ -34,16 +34,16 @@ object PrivateMessageChatEvent {
      * Cannot be used to block the message altogether. Do not use this event for data collection. For both, see [Allow].
      *
      * @param direction Indicates whether the message is incoming or outgoing.
-     * @param author The message author's name or the recipient's name.
-     * @param message The content of the actual message.
+     * @param authorComponent The message author's name or the recipient's name.
+     * @param messageComponent The content of the actual message.
      * @param chatComponent The entire original chat component.
      */
     class Modify(
         val direction: Direction,
-        author: ComponentSpan,
-        message: ComponentSpan,
+        authorComponent: ComponentSpan,
+        messageComponent: ComponentSpan,
         chatComponent: Component,
-    ) : AbstractSourcedChatEvent.Modify(author, message, chatComponent)
+    ) : AbstractSourcedChatEvent.Modify(authorComponent, messageComponent, chatComponent)
 }
 
 /**

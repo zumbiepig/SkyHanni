@@ -114,32 +114,32 @@ object HotmApi {
     ) : RotatingPerk {
         MINING_SPEED(
             perkDescription = "§6+100⸕ Mining Speed",
-            chatFallback = "Gain §r§6\\+100⸕ Mining Speed§r§f\\.",
+            chatFallback = "Gain \\+100⸕ Mining Speed\\.",
             itemFallback = "Gain §6\\+100⸕ Mining Speed§7\\.",
         ),
         MINING_FORTUNE(
             perkDescription = "§6+50☘ Mining Fortune",
-            chatFallback = "Gain §r§6\\+50☘ Mining Fortune§r§f\\.",
+            chatFallback = "Gain \\+50☘ Mining Fortune\\.",
             itemFallback = "Gain §6\\+50☘ Mining Fortune§7\\.",
         ),
         EXTRA_POWDER(
             perkDescription = "§a+15% §7more Powder",
-            chatFallback = "Gain §r§a\\+15% §r§fmore Powder while mining\\.",
+            chatFallback = "Gain \\+15% more Powder while mining\\.",
             itemFallback = "Gain §a\\+15% §7more Powder while mining\\.",
         ),
         ABILITY_COOLDOWN(
             perkDescription = "§a-20% §7Pickaxe Ability cooldowns",
-            chatFallback = "§r§a-20%§r§f Pickaxe Ability cooldowns\\.",
+            chatFallback = "-20% Pickaxe Ability cooldowns\\.",
             itemFallback = "§a-20%§7 Pickaxe Ability cooldowns\\.",
         ),
         GOBLIN_CHANCE(
             perkDescription = "§a10x §6Gold §7& §bDiamond §7Goblin chance",
-            chatFallback = "§r§a10x §r§fchance to find Golden and Diamond Goblins\\.",
+            chatFallback = "10x chance to find Golden and Diamond Goblins\\.",
             itemFallback = "§a10x §7chance to find Golden and",
         ),
         TITANIUM(
             perkDescription = "§a5x §9Titanium §7drops",
-            chatFallback = "Gain §r§a5x §r§9Titanium §r§fdrops",
+            chatFallback = "Gain 5x Titanium drops",
             itemFallback = "Gain §a5x §9Titanium §7drops\\.",
         ),
         ;
@@ -152,11 +152,11 @@ object HotmApi {
     enum class MayhemPerk(
         @field:Language("RegExp") val chatFallback: String,
     ) {
-        SCRAP_CHANCE("Your §r§9Suspicious Scrap §r§7chance was buffed by your §r§aMineshaft Mayhem §r§7perk!"),
-        MINING_FORTUNE("You received a §r§a§r§6☘ Mining Fortune §r§7buff from your §r§aMineshaft Mayhem §r§7perk!"),
-        MINING_SPEED("You received a §r§a§r§6⸕ Mining Speed §r§7buff from your §r§aMineshaft Mayhem §r§7perk!"),
-        COLD_RESISTANCE("You received a §r§a§r§b❄ Cold Resistance §r§7buff from your §r§aMineshaft Mayhem §r§7perk!"),
-        ABILITY_COOLDOWN("Your Pickaxe Ability cooldown was reduced §r§7from your §r§aMineshaft Mayhem §r§7perk!"),
+        SCRAP_CHANCE("Your Suspicious Scrap chance was buffed by your Mineshaft Mayhem perk!"),
+        MINING_FORTUNE("You received a ☘ Mining Fortune buff from your Mineshaft Mayhem perk!"),
+        MINING_SPEED("You received a ⸕ Mining Speed buff from your Mineshaft Mayhem perk!"),
+        COLD_RESISTANCE("You received a ❄ Cold Resistance buff from your Mineshaft Mayhem perk!"),
+        ABILITY_COOLDOWN("Your Pickaxe Ability cooldown was reduced from your Mineshaft Mayhem perk!"),
         ;
 
         val chatPattern by RepoPattern.pattern("mining.hotm.mayhem.chat.${asPatternId()}", chatFallback)

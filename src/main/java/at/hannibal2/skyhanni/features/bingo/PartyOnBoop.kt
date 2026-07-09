@@ -6,11 +6,10 @@ import at.hannibal2.skyhanni.data.hypixel.chat.event.Direction
 import at.hannibal2.skyhanni.data.hypixel.chat.event.PrivateMessageChatEvent
 import at.hannibal2.skyhanni.skyhannimodule.SkyHanniModule
 import at.hannibal2.skyhanni.utils.ChatUtils
+import at.hannibal2.skyhanni.utils.ComponentMatcherUtils.matchStyledMatcher
 import at.hannibal2.skyhanni.utils.HypixelCommands
 import at.hannibal2.skyhanni.utils.PlayerUtils
-import at.hannibal2.skyhanni.utils.RegexUtils.matches
 import at.hannibal2.skyhanni.utils.SkyBlockUtils
-import at.hannibal2.skyhanni.utils.StringUtils.cleanPlayerName
 import at.hannibal2.skyhanni.utils.repopatterns.RepoPattern
 
 @SkyHanniModule
@@ -23,8 +22,8 @@ object PartyOnBoop {
      * REGEX-TEST: Boop!
      */
     private val boopPattern by patternGroup.pattern(
-        "boop.colorless",
-        "Boop!",
+        "boop.chat",
+        "§d§lBoop!",
     )
 
     @HandleEvent
@@ -32,18 +31,17 @@ object PartyOnBoop {
         if (!isEnabled()) return
         if (event.direction == Direction.OUTGOING) return
 
-        val message = event.messageComponent.intoComponent()
-        if (!boopPattern.matches(message)) return
+        boopPattern.matchStyledMatcher(event.messageComponent) {
+            val username = event.cleanAuthor
+            if (username == PlayerUtils.getName()) return
 
-        val username = event.author.cleanPlayerName(displayName = true)
-        if (username == PlayerUtils.getName()) return
-
-        ChatUtils.clickableChat(
-            "Click to invite $username §eto the party!",
-            onClick = {
-                HypixelCommands.partyInvite(username)
-            },
-        )
+            ChatUtils.clickableChat(
+                "Click to invite $username to the party!",
+                onClick = {
+                    HypixelCommands.partyInvite(username)
+                },
+            )
+        }
     }
 
     private fun isEnabled() = (SkyBlockUtils.isBingoProfile && config.boopPartyBingo) || config.boopParty

@@ -60,12 +60,12 @@ object CorpseSharing {
 
     @HandleEvent
     fun onPartyChat(event: PartyChatEvent.Allow) {
-        handleChatEvent(event.author, event.message)
+        handleChatEvent(event.cleanAuthor, event.cleanMessage)
     }
 
     @HandleEvent
     fun onAllChat(event: PlayerAllChatEvent.Allow) {
-        handleChatEvent(event.author, event.message)
+        handleChatEvent(event.cleanAuthor, event.cleanMessage)
     }
 
     @HandleEvent
@@ -75,7 +75,7 @@ object CorpseSharing {
 
     private fun handleChatEvent(author: String, message: String) {
         if (!config.enabled || !IslandType.MINESHAFT.isInIsland()) return
-        if (PlayerUtils.getName() in author) return
+        if (author == PlayerUtils.getName()) return
 
         mineshaftCoordsPattern.matchMatcher(message) {
             val location = toLorenzVec() ?: return

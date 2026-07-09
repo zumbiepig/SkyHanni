@@ -2,6 +2,7 @@ package at.hannibal2.skyhanni.data.hypixel.chat.event
 
 import at.hannibal2.skyhanni.utils.ComponentSpan
 import at.hannibal2.skyhanni.utils.compat.toChatFormatting
+import net.minecraft.ChatFormatting
 import net.minecraft.network.chat.Component
 
 /**
@@ -36,13 +37,13 @@ object PlayerAllChatEvent {
     ) : AbstractSourcedChatEvent.Allow(authorComponent, messageComponent, chatComponent, blockedReason) {
 
         /** The color code of the SkyBlock level of the player who sent the message */
-        val levelColor = levelComponent?.sampleStyleAtStart()?.color?.toChatFormatting()
+        val levelColor: ChatFormatting? = levelComponent?.sampleStyleAtStart()?.color?.toChatFormatting()
 
         /** The SkyBlock level of the player who sent the message */
-        val level = levelComponent?.getText()?.toInt()
+        val level: Int? = levelComponent?.getText()?.toInt()
 
         /** Is the player who sent the message currently visiting someone else's private island? */
-        val isAGuest get() = privateIslandGuest != null
+        val isAGuest: Boolean get() = privateIslandGuest != null
     }
 
     /**
@@ -69,12 +70,12 @@ object PlayerAllChatEvent {
     ) : AbstractSourcedChatEvent.Modify(authorComponent, messageComponent, chatComponent) {
 
         /** The color code of the SkyBlock level of the player who sent the message */
-        val levelColor = levelComponent?.sampleStyleAtStart()?.color?.toChatFormatting()
+        val levelColor: ChatFormatting? = levelComponent?.sampleStyleAtStart()?.color?.toChatFormatting()
 
         /** The SkyBlock level of the player who sent the message */
-        val level = levelComponent?.getText()?.toInt()
+        val level: Int? = levelComponent?.getText()?.toInt()
 
         /** Is the player who sent the message currently visiting someone else's private island? */
-        val isAGuest get() = privateIslandGuest != null
+        val isAGuest: Boolean get() = privateIslandGuest != null
     }
 }

@@ -48,7 +48,7 @@ object ModifyVisualWords {
         return userModifiedWords.isNotEmpty()
     }
 
-    private fun visitAndReplace(visitable: FormattedText): Component {
+    fun visitAndReplace(visitable: FormattedText): Component {
         val rawCharacters = mutableListOf<StyledCharacter>()
         visitable.visit(
             { style, string ->
